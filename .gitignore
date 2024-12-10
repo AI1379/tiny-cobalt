@@ -1,0 +1,62 @@
+# Compiled object files
+*.o
+*.obj
+
+# Compiled static libraries
+*.lib
+*.a
+
+# Compiled dynamic libraries
+*.dll
+*.so
+*.dylib
+
+# Executable files
+*.exe
+*.out
+*.app
+
+# Debug files
+*.dSYM/
+*.stackdump
+
+# Generated files
+*.gch
+*.pch
+
+# CMake build directory
+/build/
+CMakeFiles/
+
+# XMake cache
+.xmake/
+
+# Code::Blocks workspace files
+*.workspace
+*.layout
+
+# Qt Creator files
+*.pro.user
+*.qmake.stash
+
+# Visual Studio files
+*.vcxproj.user
+*.vcxproj.filters
+*.vcxproj
+*.sln
+
+# Xcode files
+*.xcworkspace
+*.xcuserstate
+*.xcuserdata/
+
+# VSCode files
+.vscode/
+
+# Other
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.swn

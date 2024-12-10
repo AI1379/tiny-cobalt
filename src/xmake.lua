@@ -1,0 +1,10 @@
+target("tiny-cobalt-library")
+    set_kind("static")
+    add_includedirs("$(projectdir)/include", {public = true})
+    add_headerfiles("**.h")
+    add_files("**.cpp")
+
+target("tiny-cobalt")
+    set_kind("binary")
+    add_deps("tiny-cobalt-library")
+    add_files("Driver/Driver.cpp")
