@@ -5,6 +5,7 @@
 #ifndef TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 #define TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 
+
 namespace TinyCobalt {
     class BaseASTNode {};
 } // namespace TinyCobalt

@@ -31,6 +31,9 @@ CMakeFiles/
 # XMake cache
 .xmake/
 
+# clangd cache
+.cache
+
 # Code::Blocks workspace files
 *.workspace
 *.layout
