@@ -5,9 +5,11 @@
 #ifndef TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 #define TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 
+#include "AST/ExprNode.h"
+#include "AST/TypeNode.h"
 
-namespace TinyCobalt {
-    class BaseASTNode {};
-} // namespace TinyCobalt
+#include <proxy.h>
+
+namespace TinyCobalt::AST {} // namespace TinyCobalt::AST
 
 #endif // TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_

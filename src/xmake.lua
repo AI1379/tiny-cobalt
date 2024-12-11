@@ -5,10 +5,7 @@ add_requires(
     "cmake::LLVM",
     {
         alias = "llvm-dev",
-        system = true,
-        configs = {
-            envs = { CMAKE_PREFIX_PATH = "/usr/lib/llvm-18/lib/cmake/llvm" }
-        }
+        system = true
     }
 )
 
