@@ -1,2 +1,2 @@
-#include "AST/BaseASTNode.h"
+#include "AST/ASTNode.h"
 #include "proxy.h"

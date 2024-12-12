@@ -35,6 +35,42 @@ namespace TinyCobalt::AST {
 
 #undef REG_EXPR_NODE
 
+    enum class UnaryOp { Plus, Minus, Not, BitNot, PreInc, PreDec, PostInc, PostDec, Address, Deref };
+
+    enum class BinaryOp {
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        BitAnd,
+        BitOr,
+        BitXor,
+        BitLShift,
+        BitRShift,
+        And,
+        Or,
+        Eq,
+        Ne,
+        Lt,
+        Gt,
+        Le,
+        Ge,
+        Assign,
+        AddAssign,
+        SubAssign,
+        MulAssign,
+        DivAssign,
+        ModAssign,
+        BitAndAssign,
+        BitOrAssign,
+        BitXorAssign,
+        BitLShiftAssign,
+        BitRShiftAssign,
+        Member,
+        PtrMember,
+    };
+
 } // namespace TinyCobalt::AST
 
 #endif // TINY_COBALT_INCLUDE_AST_EXPRNODE_H_

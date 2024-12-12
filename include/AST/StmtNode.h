@@ -6,6 +6,7 @@
 #define TINY_COBALT_INCLUDE_AST_STMTNODE_H_
 
 #include <memory>
+#include <variant>
 
 #define TINY_COBALT_AST_STMT_NODES(X, ...)                                                                             \
     X(If, __VA_ARGS__)                                                                                                 \
@@ -27,6 +28,13 @@ namespace TinyCobalt::AST {
     using Name##Ptr = std::shared_ptr<Name##Node>;
 
     TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE)
+
+#undef REG_STMT_NODE
+
+#define REG_STMT_NODE(Name, Suffix) Name##Suffix,
+
+    using StmtNode = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Node) std::monostate>;
+    using StmtNodePtr = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Ptr) std::nullptr_t>;
 
 #undef REG_STMT_NODE
 

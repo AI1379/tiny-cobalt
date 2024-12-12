@@ -35,11 +35,6 @@ namespace TinyCobalt::Utility {
         using type = std::variant<VT1s..., VT2s...>;
     };
 
-    PRO_DEF_FREE_DISPATCH(FreeToDump, dump);
-    struct DumpableProxy : pro::facade_builder::add_convention<FreeToDump, void(std::ostream &)>::build {};
-    template<typename T>
-    concept Dumpable = pro::proxiable<T, DumpableProxy>;
-
 } // namespace TinyCobalt::Utility
 
 #endif // TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
