@@ -5,37 +5,20 @@
 #ifndef TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 #define TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 
+#include <cstddef>
+#include <proxy.h>
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
+#include "Common/Utility.h"
 
-#include <proxy.h>
 
-#include <string>
-
+#define TINY_COBALT_AST_NODES(X, ...)                                                                                  \
+    TINY_COBALT_AST_EXPR_NODES(X, __VA_ARGS__)                                                                         \
+    TINY_COBALT_AST_STMT_NODES(X, __VA_ARGS__)                                                                         \
+    TINY_COBALT_AST_TYPE_NODES(X, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
-
-    PRO_DEF_FREE_DISPATCH(FreeToString, std::to_string, ToString);
-
-    struct Stringable : pro::facade_builder ::add_convention<FreeToString, std::string()>::build {};
-
-    static_assert(pro::proxiable<int *, Stringable>);
-    static_assert(pro::proxiable<std::shared_ptr<double>, Stringable>);
-
-
-    namespace detail {
-#define REG_NODE_DUMP(Name, ...) void dumpImpl(const Name##Ptr &, std::ostream &os);
-
-        TINY_COBALT_AST_EXPR_NODES(REG_NODE_DUMP)
-        TINY_COBALT_AST_STMT_NODES(REG_NODE_DUMP)
-        TINY_COBALT_AST_TYPE_NODES(REG_NODE_DUMP)
-        REG_NODE_DUMP(ExprNode, )
-        REG_NODE_DUMP(StmtNode, )
-        REG_NODE_DUMP(TypeNode, )
-
-#undef REG_NODE_DUMP
-    } // namespace detail
 
 #define REG_NODE_EQ(Name, ...) bool operator==(const Name##Ptr &, const Name##Ptr &);
 
@@ -47,6 +30,40 @@ namespace TinyCobalt::AST {
     REG_NODE_EQ(TypeNode, )
 
 #undef REG_NODE_EQ
+
+    using ASTNode = Utility::UnionedVariant<ExprNode, StmtNode, TypeNode>;
+    using ASTNodePtr = Utility::UnionedVariant<ExprNodePtr, StmtNodePtr, TypeNodePtr>;
+
+#define REG_NODE_COMCEPT(Name, Suffix)
+
+    template<typename T>
+    concept ASTNodeConcept = Utility::IsVariantMember<T, ASTNode> || std::is_same_v<T, ExprNode> ||
+                             std::is_same_v<T, StmtNode> || std::is_same_v<T, TypeNode>;
+
+    template<typename T>
+    concept ASTNodePtrConcept = Utility::IsVariantMember<T, ASTNodePtr> || std::is_same_v<T, ExprNodePtr> ||
+                                std::is_same_v<T, StmtNodePtr> || std::is_same_v<T, TypeNodePtr>;
+
+    PRO_DEF_MEM_DISPATCH(MemVisit, visit);
+
+#define REG_NODE_VISIT(Name, ...) ::add_convention<MemVisit, void(Name##Ptr)>
+
+    struct ASTVisitorProxy
+        : pro::facade_builder
+          TINY_COBALT_AST_NODES(REG_NODE_VISIT, )::add_convention<MemVisit, void(std::nullptr_t)>::build {};
+
+#undef REG_NODE_VISIT
+
+    template<typename VisitorImpl>
+    class ASTVisitor {
+        template<typename T>
+            requires ASTNodePtrConcept<T>
+        void visit(this VisitorImpl &self, T node) {
+            if (node) {
+                std::visit([&self](auto &arg) { arg->visit(self); }, node);
+            }
+        }
+    };
 
 } // namespace TinyCobalt::AST
 

@@ -35,7 +35,20 @@ namespace TinyCobalt::AST {
 
 #undef REG_EXPR_NODE
 
-    enum class UnaryOp { Plus, Minus, Not, BitNot, PreInc, PreDec, PostInc, PostDec, Address, Deref };
+    // clang-format off
+    enum class UnaryOp {
+        Plus,
+        Minus,
+        Not,
+        BitNot,
+        PreInc,
+        PreDec,
+        PostInc,
+        PostDec,
+        Address,
+        Deref
+    };
+    // clang-format on
 
     enum class BinaryOp {
         Add,
