@@ -10,6 +10,7 @@
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
+#include "Common/Generator.h"
 #include "Common/Utility.h"
 
 
@@ -44,23 +45,24 @@ namespace TinyCobalt::AST {
     concept ASTNodePtrConcept = Utility::IsVariantMember<T, ASTNodePtr> || std::is_same_v<T, ExprNodePtr> ||
                                 std::is_same_v<T, StmtNodePtr> || std::is_same_v<T, TypeNodePtr>;
 
-    PRO_DEF_MEM_DISPATCH(MemVisit, visit);
+    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
 
-#define REG_NODE_VISIT(Name, ...) ::add_convention<MemVisit, void(Name##Ptr)>
+    struct TraverseableProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_convention<MemTraverse, Utility::Generator<pro::proxy<TraverseableProxy>>()> // NOLINT
+          ::build {};
 
-    struct ASTVisitorProxy
-        : pro::facade_builder
-          TINY_COBALT_AST_NODES(REG_NODE_VISIT, )::add_convention<MemVisit, void(std::nullptr_t)>::build {};
+    template<typename T>
+    concept Traverseable = pro::proxiable<T *, TraverseableProxy>;
 
-#undef REG_NODE_VISIT
+    using TraverseablePtr = pro::proxy<TraverseableProxy>;
+    using TraverseableGen = Utility::Generator<TraverseablePtr>;
 
     template<typename VisitorImpl>
     class ASTVisitor {
-        template<typename T>
-            requires ASTNodePtrConcept<T>
-        void visit(this VisitorImpl &self, T node) {
-            if (node) {
-                std::visit([&self](auto &arg) { arg->visit(self); }, node);
+        void visit(this VisitorImpl &self, TraverseablePtr node) {
+            for (auto child: node->traverse()) {
+                self.visit(child);
             }
         }
     };

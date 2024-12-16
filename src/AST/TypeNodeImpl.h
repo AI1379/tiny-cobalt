@@ -5,16 +5,19 @@
 #ifndef TINY_COBALT_SRC_AST_TYPENODEIMPL_H_
 #define TINY_COBALT_SRC_AST_TYPENODEIMPL_H_
 
+#include "AST/ASTNode.h"
 #include "AST/ExprNode.h"
 #include "AST/TypeNode.h"
 #include "Common/Utility.h"
 
+#include <proxy.h>
 #include <vector>
 
 namespace TinyCobalt::AST {
     struct SimpleTypeNode {
         const std::string name;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
+        TraverseableGen traverse() { co_yield nullptr; }
     };
 
     struct FuncTypeNode {
@@ -22,14 +25,24 @@ namespace TinyCobalt::AST {
         const std::vector<TypeNodePtr> paramTypes;
         FuncTypeNode(TypeNodePtr returnType, std::vector<TypeNodePtr> paramTypes) :
             returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
+        TraverseableGen traverse() {
+            co_yield pro::make_proxy<TraverseableProxy>(returnType);
+            for (auto &paramType: paramTypes)
+                co_yield pro::make_proxy<TraverseableProxy>(paramType);
+        }
     };
 
     struct ComplexTypeNode {
         const std::string templateName;
-        const std::vector<Utility::MergedVariant<ConstExprPtr, TypeNodePtr>> templateArgs;
+        const std::vector<Utility::UnionedVariant<ConstExprPtr, TypeNodePtr>> templateArgs;
         explicit ComplexTypeNode(std::string templateName,
-                                 std::vector<Utility::MergedVariant<ConstExprPtr, TypeNodePtr>> templateArgs) :
+                                 std::vector<Utility::UnionedVariant<ConstExprPtr, TypeNodePtr>> templateArgs) :
             templateName(std::move(templateName)), templateArgs(std::move(templateArgs)) {}
+
+        TraverseableGen traverse() {
+            for (auto &arg: templateArgs)
+                co_yield pro::make_proxy<TraverseableProxy>(arg);
+        }
     };
 
     namespace BuiltInType {
