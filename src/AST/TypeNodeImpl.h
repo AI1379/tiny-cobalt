@@ -5,7 +5,7 @@
 #ifndef TINY_COBALT_SRC_AST_TYPENODEIMPL_H_
 #define TINY_COBALT_SRC_AST_TYPENODEIMPL_H_
 
-#include "AST/ASTNode.h"
+#include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
 #include "AST/TypeNode.h"
 #include "Common/Utility.h"

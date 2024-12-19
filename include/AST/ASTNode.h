@@ -45,27 +45,6 @@ namespace TinyCobalt::AST {
     concept ASTNodePtrConcept = Utility::IsVariantMember<T, ASTNodePtr> || std::is_same_v<T, ExprNodePtr> ||
                                 std::is_same_v<T, StmtNodePtr> || std::is_same_v<T, TypeNodePtr>;
 
-    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
-
-    struct TraverseableProxy // NOLINT
-        : pro::facade_builder // NOLINT
-          ::add_convention<MemTraverse, Utility::Generator<pro::proxy<TraverseableProxy>>()> // NOLINT
-          ::build {};
-
-    template<typename T>
-    concept Traverseable = pro::proxiable<T *, TraverseableProxy>;
-
-    using TraverseablePtr = pro::proxy<TraverseableProxy>;
-    using TraverseableGen = Utility::Generator<TraverseablePtr>;
-
-    template<typename VisitorImpl>
-    class ASTVisitor {
-        void visit(this VisitorImpl &self, TraverseablePtr node) {
-            for (auto child: node->traverse()) {
-                self.visit(child);
-            }
-        }
-    };
 
 } // namespace TinyCobalt::AST
 
