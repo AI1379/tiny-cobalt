@@ -37,7 +37,7 @@ namespace TinyCobalt::AST {
 
         void visit(this VisitorImpl &self, TraverseablePtr node) {
             if (node)
-                self.beforeChildren(node);
+                self.beforeSubtree(node);
             if (self.breaked) {
                 self.breaked = false;
                 return;
@@ -58,7 +58,7 @@ namespace TinyCobalt::AST {
                 self.afterChild(node, child);
             }
             if (node)
-                self.afterChildren(node);
+                self.afterSubtree(node);
         }
 
     protected:
