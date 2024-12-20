@@ -11,37 +11,25 @@
 
 namespace TinyCobalt::AST {
 
-    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
-
-    struct TraverseableProxy // NOLINT
-        : pro::facade_builder // NOLINT
-          ::add_convention<MemTraverse, Utility::Generator<pro::proxy<TraverseableProxy>>()> // NOLINT
-          ::build {};
-
-    template<typename T>
-    concept Traverseable = pro::proxiable<T *, TraverseableProxy>;
-
-    using TraverseablePtr = pro::proxy<TraverseableProxy>;
-    using TraverseableGen = Utility::Generator<TraverseablePtr>;
-
     template<typename VisitorImpl>
     class ASTVisitor {
     public:
         // TODO: down cast TraverseablePtr to specific Node Pointer using template or overload
         // INTEERFACES
-        void beforeSubtree(TraverseablePtr node) {}
-        void afterSubtree(TraverseablePtr node) {}
-        void beforeChild(TraverseablePtr node, TraverseablePtr child) {}
-        void afterChild(TraverseablePtr node, TraverseablePtr child) {}
+        void beforeSubtree(ASTNodePtr node) {}
+        void afterSubtree(ASTNodePtr node) {}
+        void beforeChild(ASTNodePtr node, ASTNodePtr child) {}
+        void afterChild(ASTNodePtr node, ASTNodePtr child) {}
 
 
-        void visit(this VisitorImpl &self, TraverseablePtr node) {
+        void visit(this VisitorImpl &self, ASTNodePtr node) {
             if (node)
                 self.beforeSubtree(node);
             if (self.breaked) {
                 self.breaked = false;
                 return;
             }
+            // TODO: let node->traverse return a enum class to indicate the type of child node
             for (auto child: node->traverse()) {
                 if (!child)
                     continue;

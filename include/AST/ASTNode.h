@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <proxy.h>
+#include <utility>
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
@@ -32,19 +33,56 @@ namespace TinyCobalt::AST {
 
 #undef REG_NODE_EQ
 
-    using ASTNode = Utility::UnionedVariant<ExprNode, StmtNode, TypeNode>;
-    using ASTNodePtr = Utility::UnionedVariant<ExprNodePtr, StmtNodePtr, TypeNodePtr>;
+    // using ASTNode = Utility::UnionedVariant<ExprNode, StmtNode, TypeNode>;
+    // using ASTNodePtr = Utility::UnionedVariant<ExprNodePtr, StmtNodePtr, TypeNodePtr>;
 
-#define REG_NODE_COMCEPT(Name, Suffix)
+    struct ASTVisitorProxy; // TODO: implement ASTVisitorProxy
+
+    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
+
+    class ASTNodeVisitorRefl {
+    public:
+        template<typename T>
+        constexpr explicit ASTNodeVisitorRefl(std::in_place_type_t<T>, pro::proxy<ASTVisitorProxy> &visitor) {
+            // down cast Proxy type to T and call visitor.visit
+        }
+
+        template<typename F, typename R>
+        struct accessor {
+            void visit(pro::proxy<ASTVisitorProxy> &visitor) const noexcept {
+                const ASTNodeVisitorRefl &self = {pro::proxy_reflect<R>(pro::access_proxy<F>(*this)), visitor};
+            }
+        };
+    };
+
+    class RttiReflector {
+    public:
+        template<class T>
+        constexpr explicit RttiReflector(std::in_place_type_t<T>) : type_(typeid(T)) {}
+
+        template<class F, class R>
+        struct accessor {
+            const char *GetTypeName() const noexcept {
+                const RttiReflector &self = pro::proxy_reflect<R>(pro::access_proxy<F>(*this));
+                return self.type_.name();
+            }
+        };
+
+    private:
+        const std::type_info &type_;
+    };
+
+    struct ASTNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_reflection<ASTNodeVisitorRefl> // NOLINT
+          ::add_convention<MemTraverse, Utility::Generator<pro::proxy<ASTNodeProxy>>()> // NOLINT
+          ::build {};
 
     template<typename T>
-    concept ASTNodeConcept = Utility::IsVariantMember<T, ASTNode> || std::is_same_v<T, ExprNode> ||
-                             std::is_same_v<T, StmtNode> || std::is_same_v<T, TypeNode>;
+    concept IsASTNode = pro::proxiable<T *, ASTNodeProxy>;
 
-    template<typename T>
-    concept ASTNodePtrConcept = Utility::IsVariantMember<T, ASTNodePtr> || std::is_same_v<T, ExprNodePtr> ||
-                                std::is_same_v<T, StmtNodePtr> || std::is_same_v<T, TypeNodePtr>;
-
+    using ASTNodePtr = pro::proxy<ASTNodeProxy>;
+    using ASTNodeGen = Utility::Generator<ASTNodePtr>;
 
 } // namespace TinyCobalt::AST
 

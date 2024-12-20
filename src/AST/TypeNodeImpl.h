@@ -17,7 +17,7 @@ namespace TinyCobalt::AST {
     struct SimpleTypeNode {
         const std::string name;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
-        TraverseableGen traverse() { co_yield nullptr; }
+        ASTNodeGen traverse() { co_yield nullptr; }
     };
 
     struct FuncTypeNode {
@@ -25,10 +25,10 @@ namespace TinyCobalt::AST {
         const std::vector<TypeNodePtr> paramTypes;
         FuncTypeNode(TypeNodePtr returnType, std::vector<TypeNodePtr> paramTypes) :
             returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(returnType);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(returnType);
             for (auto &paramType: paramTypes)
-                co_yield pro::make_proxy<TraverseableProxy>(paramType);
+                co_yield pro::make_proxy<ASTNodeProxy>(paramType);
         }
     };
 
@@ -39,9 +39,9 @@ namespace TinyCobalt::AST {
                                  std::vector<Utility::UnionedVariant<ConstExprPtr, TypeNodePtr>> templateArgs) :
             templateName(std::move(templateName)), templateArgs(std::move(templateArgs)) {}
 
-        TraverseableGen traverse() {
+        ASTNodeGen traverse() {
             for (auto &arg: templateArgs)
-                co_yield pro::make_proxy<TraverseableProxy>(arg);
+                co_yield pro::make_proxy<ASTNodeProxy>(arg);
         }
     };
 

@@ -19,16 +19,16 @@ namespace TinyCobalt::AST {
         const std::string value;
         TypeNodePtr type;
         explicit ConstExprNode(std::string value) : value(value), type(nullptr) {}
-        TraverseableGen traverse() { co_yield pro::make_proxy<TraverseableProxy>(type); }
+        ASTNodeGen traverse() { co_yield pro::make_proxy<ASTNodeProxy>(type); }
     };
 
     struct AssignNode {
         ExprNodePtr lhs;
         ExprNodePtr rhs;
         explicit AssignNode(ExprNodePtr lhs, ExprNodePtr rhs) : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(lhs);
-            co_yield pro::make_proxy<TraverseableProxy>(rhs);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(lhs);
+            co_yield pro::make_proxy<ASTNodeProxy>(rhs);
         }
     };
 
@@ -38,9 +38,9 @@ namespace TinyCobalt::AST {
         ExprNodePtr rhs;
         explicit BinaryNode(BinaryOp op, ExprNodePtr lhs, ExprNodePtr rhs) :
             op(std::move(op)), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(lhs);
-            co_yield pro::make_proxy<TraverseableProxy>(rhs);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(lhs);
+            co_yield pro::make_proxy<ASTNodeProxy>(rhs);
         }
     };
 
@@ -48,16 +48,16 @@ namespace TinyCobalt::AST {
         const UnaryOp op;
         ExprNodePtr operand;
         explicit UnaryNode(UnaryOp op, ExprNodePtr operand) : op(std::move(op)), operand(std::move(operand)) {}
-        TraverseableGen traverse() { co_yield pro::make_proxy<TraverseableProxy>(operand); }
+        ASTNodeGen traverse() { co_yield pro::make_proxy<ASTNodeProxy>(operand); }
     };
 
     struct CastNode {
         TypeNodePtr type;
         ExprNodePtr operand;
         explicit CastNode(TypeNodePtr type, ExprNodePtr operand) : type(std::move(type)), operand(std::move(operand)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(type);
-            co_yield pro::make_proxy<TraverseableProxy>(operand);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(type);
+            co_yield pro::make_proxy<ASTNodeProxy>(operand);
         }
     };
 
@@ -67,10 +67,10 @@ namespace TinyCobalt::AST {
         ExprNodePtr falseBranch;
         explicit ConditionNode(ExprNodePtr condition, ExprNodePtr trueBranch, ExprNodePtr falseBranch) :
             condition(std::move(condition)), trueBranch(std::move(trueBranch)), falseBranch(std::move(falseBranch)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(condition);
-            co_yield pro::make_proxy<TraverseableProxy>(trueBranch);
-            co_yield pro::make_proxy<TraverseableProxy>(falseBranch);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(condition);
+            co_yield pro::make_proxy<ASTNodeProxy>(trueBranch);
+            co_yield pro::make_proxy<ASTNodeProxy>(falseBranch);
         }
     };
 
@@ -79,10 +79,10 @@ namespace TinyCobalt::AST {
         std::vector<ExprNodePtr> args;
         explicit FuncCallNode(ExprNodePtr func, std::vector<ExprNodePtr> args) :
             func(std::move(func)), args(std::move(args)) {}
-        TraverseableGen traverse() {
-            co_yield pro::make_proxy<TraverseableProxy>(func);
+        ASTNodeGen traverse() {
+            co_yield pro::make_proxy<ASTNodeProxy>(func);
             for (auto &arg: args)
-                co_yield pro::make_proxy<TraverseableProxy>(arg);
+                co_yield pro::make_proxy<ASTNodeProxy>(arg);
         }
     };
 

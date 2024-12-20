@@ -1,5 +1,5 @@
 add_requires(
-    "microsoft-proxy"
+    "microsoft-proxy 3.1.0"
 )
 add_requires(
     "cmake::LLVM",
