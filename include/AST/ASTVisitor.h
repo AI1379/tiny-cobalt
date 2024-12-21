@@ -11,8 +11,33 @@
 
 namespace TinyCobalt::AST {
 
+    template<typename... Args>
+    void EmptyVisit(auto &&...) {}
+
+    PRO_DEF_MEM_DISPATCH(MemBeforeSubtree, beforeSubtree);
+    PRO_DEF_WEAK_DISPATCH(WeakMemBeforeSubtree, MemBeforeSubtree, EmptyVisit);
+    PRO_DEF_MEM_DISPATCH(MemAfterSubtree, afterSubtree);
+    PRO_DEF_WEAK_DISPATCH(WeakMemAfterSubtree, MemAfterSubtree, EmptyVisit);
+    PRO_DEF_MEM_DISPATCH(MemBeforeChild, beforeChild);
+    PRO_DEF_WEAK_DISPATCH(WeakMemBeforeChild, MemBeforeChild, EmptyVisit);
+    PRO_DEF_MEM_DISPATCH(MemAfterChild, afterChild);
+    PRO_DEF_WEAK_DISPATCH(WeakMemAfterChild, MemAfterChild, EmptyVisit);
+
+    struct ASTVisitorProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_convention<WeakMemBeforeSubtree, void(ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemAfterSubtree, void(ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemBeforeChild, void(ASTNodePtr, ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemAfterChild, void(ASTNodePtr, ASTNodePtr)> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept ASTVisitorConcept = pro::proxiable<T *, ASTVisitorProxy>;
+
+    // We use CRTP to implement the AST visitor
     template<typename VisitorImpl>
-    class ASTVisitor {
+        requires ASTVisitorConcept<VisitorImpl>
+    class BaseASTVisitor {
     public:
         // TODO: down cast TraverseablePtr to specific Node Pointer using template or overload
         // INTEERFACES
