@@ -17,7 +17,10 @@ target("tiny-cobalt-library")
     add_headerfiles("**.h")
     add_packages(
         "llvm-dev",
-        "microsoft-proxy"
+        "microsoft-proxy",
+        {
+            public = true
+        }
     )
 
 target("tiny-cobalt")

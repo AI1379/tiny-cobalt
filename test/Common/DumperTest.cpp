@@ -25,7 +25,7 @@ TEST(Common, Dumper2) {
 TEST(Common, Dumper3) {
     std::stringstream ss;
     Dumper dumper(ss, 4);
-    dumper.setEndLineChar(';').setIntendChar('`').setIntend(8);
+    dumper.setEndLine(';').setIntendChar('`').setIntend(8);
     dumper.dump(Dumper::Controller::StartBlock)
             .dump(Dumper::Controller::EndLine)
             .dump("Dumper Test")

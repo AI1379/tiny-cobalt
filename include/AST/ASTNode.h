@@ -5,7 +5,11 @@
 #ifndef TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 #define TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 
+#include <cassert>
+#include <memory>
 #include <proxy.h>
+#include <type_traits>
+#include <typeinfo>
 #include <utility>
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
@@ -34,23 +38,34 @@ namespace TinyCobalt::AST {
     // using ASTNode = Utility::UnionedVariant<ExprNode, StmtNode, TypeNode>;
     // using ASTNodePtr = Utility::UnionedVariant<ExprNodePtr, StmtNodePtr, TypeNodePtr>;
 
-    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
+    // FIXME: There may be memory leaks
 
+    PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
+    PRO_DEF_MEM_DISPATCH(MemThisPointer, thisPointer);
+
+    // TODO: Check if it is possible not to use RTTI
     struct ContainTypeRefl {
-        template<typename T, typename U>
-        constexpr explicit ContainTypeRefl(std::in_place_type_t<T>, U &&) : same_(std::is_same_v<T, U>) {}
+        template<typename T>
+        constexpr explicit ContainTypeRefl(std::in_place_type_t<T>) : type_(typeid(T)) {}
 
         template<typename F, typename R>
         struct accessor {
             template<typename T>
             bool containType() const noexcept {
-                const ContainTypeRefl &self = {pro::proxy_reflect<F>(pro::access_proxy<F>(*this)), std::declval<T>()};
-                return self.same_;
+                const ContainTypeRefl &self = pro::proxy_reflect<R>(pro::access_proxy<F>(*this));
+                return self.type_.hash_code() == typeid(T).hash_code();
+            }
+
+            template<typename T>
+            std::shared_ptr<T> cast() const noexcept {
+                assert(containType<T>());
+                // FIXME: No restriction on the type of F
+                return reinterpret_cast<T *>(pro::access_proxy<F>(*this)->thisPointer())->shared_from_this();
             }
         };
 
     private:
-        bool same_;
+        const std::type_info &type_;
     };
 
 
@@ -58,10 +73,21 @@ namespace TinyCobalt::AST {
         : pro::facade_builder // NOLINT
           ::add_reflection<ContainTypeRefl> // NOLINT
           ::add_convention<MemTraverse, Utility::Generator<pro::proxy<ASTNodeProxy>>()> // NOLINT
+          // FIXME: erased type information may lead to memory leaks
+          ::add_convention<MemThisPointer, void *() const> // NOLINT
+          ::support_copy<pro::constraint_level::nontrivial> // NOLINT
           ::build {};
 
     template<typename T>
+    struct EnableThisPointer : public std::enable_shared_from_this<T> {
+        void *thisPointer() const { return const_cast<void *>(reinterpret_cast<const void *>(this)); }
+    };
+
+    template<typename T>
     concept ASTNodeConcept = pro::proxiable<T *, ASTNodeProxy>;
+
+    template<typename T>
+    concept ASTNodePtrConcept = pro::proxiable<T, ASTNodeProxy>;
 
     using ASTNodePtr = pro::proxy<ASTNodeProxy>;
     using ASTNodeGen = Utility::Generator<ASTNodePtr>;

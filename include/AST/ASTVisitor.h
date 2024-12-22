@@ -75,7 +75,7 @@ namespace TinyCobalt::AST {
         }
 
     protected:
-        bool breaked, continued;
+        bool breaked = false, continued = false;
         void break_() { breaked = true; }
         void continue_() { continued = true; }
     };

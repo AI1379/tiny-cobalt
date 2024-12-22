@@ -27,7 +27,11 @@ namespace TinyCobalt::Utility {
             return *this;
         }
 
-        Dumper &setEndLineChar(char endLineChar) {
+        Dumper &setEndLine(std::string endLineChar) {
+            this->endLineChar = endLineChar;
+            return *this;
+        }
+        Dumper &setEndLine(char endLineChar) {
             this->endLineChar = endLineChar;
             return *this;
         }
@@ -45,13 +49,17 @@ namespace TinyCobalt::Utility {
 
         template<typename T>
         Dumper &dump(const T &value) {
-            value.dump(*this);
+            *this << value;
             return *this;
         }
 
         Dumper &dump(const char *value) { return operator<<(value); }
 
         Dumper &endl() { return dump(Controller::EndLine); }
+        Dumper &pushIntend() { return dump(Controller::PushIntend); }
+        Dumper &popIntend() { return dump(Controller::PopIntend); }
+        Dumper &startBlock() { return dump(Controller::StartBlock); }
+        Dumper &endBlock() { return dump(Controller::EndBlock); }
 
         Dumper &operator<<(Controller controller) {
             switch (controller) {
@@ -96,7 +104,7 @@ namespace TinyCobalt::Utility {
         std::size_t intend = 0;
         char intendChar = ' ';
         std::size_t currentIntend = 0;
-        char endLineChar = '\n';
+        std::string endLineChar = "\n";
         char startBlockChar = '{';
         char endBlockChar = '}';
     };
