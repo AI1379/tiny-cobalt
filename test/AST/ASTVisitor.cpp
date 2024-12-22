@@ -44,7 +44,7 @@ struct LeafNode : public AST::EnableThisPointer<LeafNode> {
     LeafNode(const LeafNode &) = default;
 
     // TODO: co_return
-    AST::ASTNodeGen traverse() { co_yield nullptr; }
+    AST::ASTNodeGen traverse() { co_return; }
     std::string name;
     bool visited = false;
 };
