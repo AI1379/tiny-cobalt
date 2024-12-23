@@ -43,7 +43,6 @@ struct LeafNode : public AST::EnableThisPointer<LeafNode> {
     explicit LeafNode(std::string name) : name(std::move(name)) {}
     LeafNode(const LeafNode &) = default;
 
-    // TODO: co_return
     AST::ASTNodeGen traverse() { co_return; }
     std::string name;
     bool visited = false;

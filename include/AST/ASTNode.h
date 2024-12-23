@@ -29,9 +29,9 @@ namespace TinyCobalt::AST {
     TINY_COBALT_AST_EXPR_NODES(REG_NODE_EQ)
     TINY_COBALT_AST_STMT_NODES(REG_NODE_EQ)
     TINY_COBALT_AST_TYPE_NODES(REG_NODE_EQ)
-    REG_NODE_EQ(ExprNode, )
-    REG_NODE_EQ(StmtNode, )
-    REG_NODE_EQ(TypeNode, )
+    // REG_NODE_EQ(ExprNode, )
+    // REG_NODE_EQ(StmtNode, )
+    // REG_NODE_EQ(TypeNode, )
 
 #undef REG_NODE_EQ
 
@@ -91,6 +91,11 @@ namespace TinyCobalt::AST {
 
     using ASTNodePtr = pro::proxy<ASTNodeProxy>;
     using ASTNodeGen = Utility::Generator<ASTNodePtr>;
+
+    // TODO: use more strict proxy to restrict these types
+    using ExprNodePtr = ASTNodePtr;
+    using StmtNodePtr = ASTNodePtr;
+    using TypeNodePtr = ASTNodePtr;
 
 } // namespace TinyCobalt::AST
 

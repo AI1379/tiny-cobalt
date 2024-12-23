@@ -28,12 +28,12 @@ namespace TinyCobalt::AST {
 
 #undef REG_EXPR_NODE
 
-#define REG_EXPR_NODE(Name, Suffix) Name##Suffix,
+// #define REG_EXPR_NODE(Name, Suffix) Name##Suffix,
 
-    using ExprNode = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Node) std::monostate>;
-    using ExprNodePtr = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Ptr) std::nullptr_t>;
+//     using ExprNode = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Node) std::monostate>;
+//     using ExprNodePtr = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Ptr) std::nullptr_t>;
 
-#undef REG_EXPR_NODE
+// #undef REG_EXPR_NODE
 
     // clang-format off
     enum class UnaryOp {
