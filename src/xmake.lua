@@ -10,9 +10,10 @@ add_requires(
 )
 
 target("tiny-cobalt-library")
-    add_defines("TINYCOBALT_LIBRARY")
     set_kind("static")
-    add_files("**.cpp")
+    add_rules("lex", "yacc")
+    add_defines("TINYCOBALT_LIBRARY")
+    add_files("**.cpp", "**.ll", "**.yy")
     add_includedirs("$(projectdir)/include", { public = true })
     add_headerfiles("**.h")
     add_packages(
