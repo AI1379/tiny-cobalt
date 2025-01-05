@@ -11,6 +11,10 @@
 #include "Parser.tab.hpp"
 
 namespace TinyCobalt::LexerParser {
+    // struct location {};
+    // struct parser {
+    //     enum class symbol_type {};
+    // };
     class YaccDriver {
     public:
         YaccDriver();

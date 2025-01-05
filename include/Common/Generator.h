@@ -406,8 +406,7 @@ namespace TinyCobalt::Utility {
             void *operator new(std::size_t sz) {
                 auto nsz = alloc_size<void>(sz);
                 DeallocFunc d = [](void *ptr, std::size_t sz) {
-                    // TODO: Check MSVC STL's implementation
-                    ::operator delete(ptr, static_cast<size_t>(alloc_size<void>(sz)));
+                    ::operator delete(ptr, alloc_size<void>(sz));
                 };
                 auto p = ::operator new(nsz);
                 auto pn = reinterpret_cast<std::uintptr_t>(p);
