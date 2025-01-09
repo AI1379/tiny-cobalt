@@ -32,12 +32,14 @@ namespace TinyCobalt::AST {
         }
     };
 
-    struct BinaryNode {
-        const BinaryOp op;
+    struct BinaryNode : public EnableThisPointer<BinaryNode> {
+        BinaryOp op;
         ExprNodePtr lhs;
         ExprNodePtr rhs;
         explicit BinaryNode(BinaryOp op, ExprNodePtr lhs, ExprNodePtr rhs) :
             op(std::move(op)), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+        // BinaryNode(const BinaryNode &) = default;
+        // BinaryNode &operator=(const BinaryNode &) = default;
         ASTNodeGen traverse() {
             co_yield lhs;
             co_yield rhs;
@@ -77,7 +79,7 @@ namespace TinyCobalt::AST {
     struct FuncCallNode {
         ExprNodePtr func;
         std::vector<ExprNodePtr> args;
-        explicit FuncCallNode(ExprNodePtr func, std::vector<ExprNodePtr> args) :
+        explicit FuncCallNode(ExprNodePtr func, std::vector<ExprNodePtr> args = {}) :
             func(std::move(func)), args(std::move(args)) {}
         ASTNodeGen traverse() {
             co_yield func;

@@ -14,9 +14,10 @@ target("tiny-cobalt-library")
     add_rules("lex", "yacc")
     add_cxxflags("clang::-fsized-deallocation")
     add_defines("TINYCOBALT_LIBRARY")
-    add_files("**.cpp", "**.ll", "**.yy")
+    add_files("**.cpp", "**.yy")
     -- add_files("**.cpp")
     add_includedirs("$(projectdir)/include", { public = true })
+    add_includedirs("$(projectdir)/src", { public = false })
     add_headerfiles("**.h")
     add_packages(
         "llvm-dev",

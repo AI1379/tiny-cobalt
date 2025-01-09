@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <memory>
+#include <ostream>
 #include <proxy.h>
 #include <type_traits>
 #include <typeinfo>
@@ -96,6 +97,11 @@ namespace TinyCobalt::AST {
     using ExprNodePtr = ASTNodePtr;
     using StmtNodePtr = ASTNodePtr;
     using TypeNodePtr = ASTNodePtr;
+
+    inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) {
+        // TODO: implement this;
+        return os;
+    }
 
 } // namespace TinyCobalt::AST
 

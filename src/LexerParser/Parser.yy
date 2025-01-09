@@ -2,9 +2,9 @@
 * Created by Renatus Madrigal on 12/26/2024
 */
 
-%skeleton "lalr1.cc"
+%skeleton "glr2.cc"
 %require "3.8"
-%define api.namespace { TinyCobalt::LexerParser }
+%define api.namespace { TinyCobalt::LexerParser::yy }
 %header
 
 %define api.token.raw
@@ -15,7 +15,10 @@
 
 %code requires {
 #include <string>
-namespace TinyCobalt::LexerParser{
+#include "AST/ExprNodeImpl.h"
+#include "AST/ExprNode.h"
+#include "AST/ASTNode.h"
+namespace TinyCobalt::LexerParser {
     class YaccDriver;
 }
 }
@@ -28,15 +31,17 @@ namespace TinyCobalt::LexerParser{
 
 %define parse.trace
 %define parse.error detailed
-%define parse.lac full
 
 %code {
 #include "LexerParser/YaccDriver.h"
+
+// namespace AST = TinyCobalt::AST;
+using namespace TinyCobalt;
 }
 
 %define api.token.prefix {Token_}
 %token 
-    ASSIGN ":="
+    ASSIGN "="
     PLUS "+"
     MINUS "-"
     TIMES "*"
@@ -48,35 +53,38 @@ namespace TinyCobalt::LexerParser{
 
 %token <std::string> IDENTIFIER "identifier"
 %token <int> NUMBER "number"
-%nterm <int> exp
+%token <char> CONST_CHAR "const_char"
+%nterm <AST::ExprNodePtr> exp
 
 %printer { yyo << $$; } <*>;
 
 %%
 
 %start unit;
-unit: assignments exp  { driver.result = $2; };
+unit: exp { driver.result = $1; };
 
 assignments:
   %empty                 {}
 | assignments assignment {};
 
 assignment:
-  "identifier" ":=" exp { driver.variables[$1] = $3; };
+  "identifier" "=" exp { driver.variables[$1] = $3; };
 
 %left "+" "-";
-%left "*" "/";
+%left "*" "/" "%";
+
 exp:
   "number"
 | "identifier"  { $$ = driver.variables[$1]; }
-| exp "+" exp   { $$ = $1 + $3; }
-| exp "-" exp   { $$ = $1 - $3; }
-| exp "*" exp   { $$ = $1 * $3; }
-| exp "/" exp   { $$ = $1 / $3; }
+| exp "+" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Add, $1, $3); }
+| exp "-" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Sub, $1, $3); }
+| exp "*" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mul, $1, $3); }
+| exp "/" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Div, $1, $3); }
+| exp "%" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mod, $1, $3); }
 | "(" exp ")"   { $$ = $2; }
 
 %%
 
-void TinyCobalt::LexerParser::parser::error(const location_type& l, const std::string& m){
+void TinyCobalt::LexerParser::yy::parser::error(const location_type& l, const std::string& m){
     std::cerr << l << ": " << m << std::endl;
 }
