@@ -35,6 +35,8 @@ namespace TinyCobalt::LexerParser {
 %code {
 #include "LexerParser/YaccDriver.h"
 
+#define yylex driver.lexer->yylex
+
 // namespace AST = TinyCobalt::AST;
 using namespace TinyCobalt;
 }

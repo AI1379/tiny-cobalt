@@ -5,8 +5,10 @@
 #ifndef TINY_COBALT_SRC_LEXERPARSER_YACCDRIVER_H_
 #define TINY_COBALT_SRC_LEXERPARSER_YACCDRIVER_H_
 
+#include <istream>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <proxy.h>
 #include <stack>
 #include <string>
@@ -14,8 +16,18 @@
 #include "AST/ASTNode.h"
 #include "AST/ExprNodeImpl.h"
 #include "Parser.tab.hpp"
+#ifndef yyFlexLexerOnce
+#include <FlexLexer.h>
+#endif
 
 namespace TinyCobalt::LexerParser {
+    class YaccDriver;
+
+    class YaccLexer : public yyFlexLexer {
+    public:
+        yy::parser::symbol_type yylex(YaccDriver &driver);
+    };
+
     class YaccDriver {
     public:
         YaccDriver();
@@ -28,6 +40,9 @@ namespace TinyCobalt::LexerParser {
         int parse(const std::string &f);
         // The name of the file being parsed.
         std::string file;
+        std::istream *is;
+        std::ostream *os;
+        YaccLexer *lexer;
         // Whether to generate parser debug traces.
         bool trace_parsing;
 
@@ -53,9 +68,5 @@ namespace TinyCobalt::LexerParser {
 
 
 } // namespace TinyCobalt::LexerParser
-
-#define YY_DECL TinyCobalt::LexerParser::yy::parser::symbol_type yylex(TinyCobalt::LexerParser::YaccDriver &driver)
-
-YY_DECL;
 
 #endif // TINY_COBALT_SRC_LEXERPARSER_YACCDRIVER_H_

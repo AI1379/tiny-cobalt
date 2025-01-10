@@ -6,5 +6,3 @@
 #include "YaccDriver.h"
 
 namespace TinyCobalt::LexerParser {} // namespace TinyCobalt::LexerParser
-
-YY_DECL { return {}; };
