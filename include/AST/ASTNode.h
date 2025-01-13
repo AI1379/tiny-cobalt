@@ -79,6 +79,7 @@ namespace TinyCobalt::AST {
           ::support_copy<pro::constraint_level::nontrivial> // NOLINT
           ::build {};
 
+
     template<typename T>
     struct EnableThisPointer : public std::enable_shared_from_this<T> {
         void *thisPointer() const { return const_cast<void *>(reinterpret_cast<const void *>(this)); }
@@ -88,18 +89,57 @@ namespace TinyCobalt::AST {
     concept ASTNodeConcept = pro::proxiable<T *, ASTNodeProxy>;
 
     template<typename T>
-    concept ASTNodePtrConcept = pro::proxiable<T, ASTNodeProxy>;
+    concept ASTNodePtrConcept = pro::proxiable<T, ASTNodeProxy> || std::is_convertible_v<T, pro::proxy<ASTNodeProxy>>;
 
     using ASTNodePtr = pro::proxy<ASTNodeProxy>;
     using ASTNodeGen = Utility::Generator<ASTNodePtr>;
 
     // TODO: use more strict proxy to restrict these types
-    using ExprNodePtr = ASTNodePtr;
     using StmtNodePtr = ASTNodePtr;
     using TypeNodePtr = ASTNodePtr;
 
+    struct ExprNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemEvalType, AST::TypeNodePtr()> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept ExprNodeConcept = pro::proxiable<T *, ExprNodeProxy>;
+    template<typename T>
+    concept ExprNodePtrConcept = pro::proxiable<T, ExprNodeProxy>;
+    using ExprNodePtr = pro::proxy<ExprNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<ExprNodePtr>);
+
+    struct ASTRootNode : public EnableThisPointer<ASTRootNode> {
+        std::vector<ASTNodePtr> children;
+        explicit ASTRootNode(std::vector<ASTNodePtr> children) : children(std::move(children)) {}
+        template<typename T>
+            requires ASTNodePtrConcept<T>
+        explicit ASTRootNode(std::vector<T> children) {
+            for (const auto &child: children) {
+                this->children.push_back(child);
+            }
+        }
+        ASTNodeGen traverse() {
+            for (const auto &child: children) {
+                co_yield child;
+            }
+        }
+    };
+    using ASTRootNodePtr = std::shared_ptr<ASTRootNode>;
+
     inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) {
         // TODO: implement this;
+        return os;
+    }
+
+    template<typename T>
+    inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &nodes) {
+        for (const auto &node: nodes) {
+            os << node << std::endl;
+        }
         return os;
     }
 

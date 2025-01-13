@@ -15,13 +15,13 @@
 #include <vector>
 
 namespace TinyCobalt::AST {
-    struct SimpleTypeNode {
+    struct SimpleTypeNode : public EnableThisPointer<SimpleTypeNode> {
         const std::string name;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_yield nullptr; }
     };
 
-    struct FuncTypeNode {
+    struct FuncTypeNode : public EnableThisPointer<FuncTypeNode> {
         const TypeNodePtr returnType;
         const std::vector<TypeNodePtr> paramTypes;
         FuncTypeNode(TypeNodePtr returnType, std::vector<TypeNodePtr> paramTypes) :
@@ -33,7 +33,7 @@ namespace TinyCobalt::AST {
         }
     };
 
-    struct ComplexTypeNode {
+    struct ComplexTypeNode : public EnableThisPointer<ComplexTypeNode> {
         const std::string templateName;
         // TODO: restrict the type of templateArgs
         const std::vector<ASTNodePtr> templateArgs;

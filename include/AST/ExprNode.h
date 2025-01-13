@@ -5,6 +5,7 @@
 #ifndef TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 #define TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 
+#include <proxy.h>
 #include <cstddef>
 #include <memory>
 #include <variant>
@@ -83,6 +84,8 @@ namespace TinyCobalt::AST {
         Member,
         PtrMember,
     };
+
+    PRO_DEF_MEM_DISPATCH(MemEvalType, EvalType);
 
 } // namespace TinyCobalt::AST
 

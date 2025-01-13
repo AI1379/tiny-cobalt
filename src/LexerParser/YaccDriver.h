@@ -32,25 +32,18 @@ namespace TinyCobalt::LexerParser {
     public:
         YaccDriver();
 
-        std::map<std::string, AST::ASTNodePtr> variables;
+        std::map<std::string, AST::ExprNodePtr> variables;
 
-        AST::ASTNodePtr result;
+        AST::ASTRootNodePtr result;
 
-        // Run the parser on file F.  Return 0 on success.
-        int parse(const std::string &f);
-        // The name of the file being parsed.
-        std::string file;
-        std::istream *is;
-        std::ostream *os;
+        // Start parsing.
+        int parse();
+        
         YaccLexer *lexer;
-        // Whether to generate parser debug traces.
-        bool trace_parsing;
 
         // Handling the scanner.
         void scan_begin();
         void scan_end();
-        // Whether to generate scanner debug traces.
-        bool trace_scanning;
         // The token's location used by the scanner.
         yy::location location;
 
@@ -62,6 +55,15 @@ namespace TinyCobalt::LexerParser {
         AST::ASTNodePtr getCurrent() const { return stack_.top(); }
 
     private:
+        // The name of the file being parsed.
+        std::string file;
+        std::istream *is;
+        std::ostream *os;
+        // Whether to generate parser debug traces.
+        bool trace_parsing;
+        // Whether to generate scanner debug traces.
+        bool trace_scanning;
+
         AST::ASTNodePtr ast_;
         std::stack<AST::ASTNodePtr> stack_;
     };

@@ -1,3 +1,7 @@
+/*
+ * Created by Renatus Madrigal on 1/12/2025
+ */
+
 %{
 # include <cerrno>
 # include <climits>
@@ -147,16 +151,9 @@ void TinyCobalt::LexerParser::YaccDriver::scan_begin ()
   this->lexer = new YaccLexer;
   this->lexer->set_debug(trace_scanning);
   this->lexer->switch_streams(*(this->is), *(this->os));
-  /* if (file.empty () || file == "-")
-    yyin = stdin;
-  else if (!(yyin = fopen (file.c_str (), "r")))
-    {
-      std::cerr << "cannot open " << file << ": " << strerror (errno) << '\n';
-      exit (EXIT_FAILURE);
-    } */
 }
 
 void TinyCobalt::LexerParser::YaccDriver::scan_end ()
 {
-  /* fclose (yyin); */
+  delete this->lexer;
 }

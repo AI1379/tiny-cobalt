@@ -1,6 +1,6 @@
 /*
-* Created by Renatus Madrigal on 12/26/2024
-*/
+ * Created by Renatus Madrigal on 12/26/2024
+ */
 
 %skeleton "glr2.cc"
 %require "3.8"
@@ -14,10 +14,15 @@
 %define parse.assert
 
 %code requires {
-#include <string>
 #include "AST/ExprNodeImpl.h"
 #include "AST/ExprNode.h"
+#include "AST/StmtNodeImpl.h"
+#include "AST/StmtNode.h"
 #include "AST/ASTNode.h"
+
+// namespace AST = TinyCobalt::AST;
+using namespace TinyCobalt;
+
 namespace TinyCobalt::LexerParser {
     class YaccDriver;
 }
@@ -36,9 +41,6 @@ namespace TinyCobalt::LexerParser {
 #include "LexerParser/YaccDriver.h"
 
 #define yylex driver.lexer->yylex
-
-// namespace AST = TinyCobalt::AST;
-using namespace TinyCobalt;
 }
 
 %define api.token.prefix {Token_}
@@ -51,39 +53,62 @@ using namespace TinyCobalt;
     MODULO "%"
     LPAREN "("
     RPAREN ")"
+    LBRAKET "["
+    RBRAKET "]"
+    LBRACE "{"
+    RBRACE "}"
+    COMMA ","
+    SEMICOLON ";"
 ;
 
 %token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
+%token <AST::ExprNodePtr> NUMBER "number"
 %token <char> CONST_CHAR "const_char"
-%nterm <AST::ExprNodePtr> exp
+%nterm <AST::ExprNodePtr> expr
+%nterm <std::vector<AST::ExprNodePtr>> exprs;
+%nterm <AST::AssignPtr> assignment;
+%nterm <AST::StmtNodePtr> stmt;
+%nterm <std::vector<AST::StmtNodePtr>> stmts;
+%nterm <AST::BlockPtr> block;
 
 %printer { yyo << $$; } <*>;
 
 %%
 
 %start unit;
-unit: exp { driver.result = $1; };
+unit: 
+  stmts { driver.result = std::make_shared<AST::ASTRootNode>($1); }
 
-assignments:
-  %empty                 {}
-| assignments assignment {};
+block:
+  "{" stmts "}" { $$ = driver.allocNode<AST::BlockNode>($2); }
 
 assignment:
-  "identifier" "=" exp { driver.variables[$1] = $3; };
+  "identifier" "=" expr { driver.variables[$1] = $3; };
+
+expr:
+  "number"
+| "identifier"  { $$ = driver.variables[$1]; }
+| expr "+" expr   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Add, $1, $3); }
+| expr "-" expr   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Sub, $1, $3); }
+| expr "*" expr   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mul, $1, $3); }
+| expr "/" expr   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Div, $1, $3); }
+| expr "%" expr   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mod, $1, $3); }
+| "(" expr ")"   { $$ = $2; }
+
+exprs:
+  expr { $$ = {$1}; }
+| exprs expr { $$ = std::move($1); $$.emplace_back($2); };
+
+stmt:
+  block { $$ = $1; };
+| expr ";" { $$ = driver.allocNode<AST::ExprStmtNode>($1); }
+
+stmts:
+  stmt { $$ = {$1}; }
+| stmts stmt { $$ = std::move($1); $$.emplace_back($2); };
 
 %left "+" "-";
 %left "*" "/" "%";
-
-exp:
-  "number"
-| "identifier"  { $$ = driver.variables[$1]; }
-| exp "+" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Add, $1, $3); }
-| exp "-" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Sub, $1, $3); }
-| exp "*" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mul, $1, $3); }
-| exp "/" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Div, $1, $3); }
-| exp "%" exp   { $$ = driver.allocNode<AST::BinaryNode>(AST::BinaryOp::Mod, $1, $3); }
-| "(" exp ")"   { $$ = $2; }
 
 %%
 

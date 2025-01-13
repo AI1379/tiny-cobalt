@@ -19,7 +19,8 @@
     X(VariableDef, __VA_ARGS__)                                                                                        \
     X(FuncDef, __VA_ARGS__)                                                                                            \
     X(StructDef, __VA_ARGS__)                                                                                          \
-    X(AliasDef, __VA_ARGS__)
+    X(AliasDef, __VA_ARGS__)                                                                                           \
+    X(ExprStmt, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 
@@ -31,12 +32,12 @@ namespace TinyCobalt::AST {
 
 #undef REG_STMT_NODE
 
-// #define REG_STMT_NODE(Name, Suffix) Name##Suffix,
+    // #define REG_STMT_NODE(Name, Suffix) Name##Suffix,
 
-//     using StmtNode = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Node) std::monostate>;
-//     using StmtNodePtr = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Ptr) std::nullptr_t>;
+    //     using StmtNode = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Node) std::monostate>;
+    //     using StmtNodePtr = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Ptr) std::nullptr_t>;
 
-// #undef REG_STMT_NODE
+    // #undef REG_STMT_NODE
 
 } // namespace TinyCobalt::AST
 

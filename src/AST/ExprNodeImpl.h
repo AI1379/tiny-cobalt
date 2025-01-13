@@ -5,6 +5,7 @@
 #ifndef TINY_COBALT_SRC_AST_EXPRNODEIMPL_H_
 #define TINY_COBALT_SRC_AST_EXPRNODEIMPL_H_
 
+#include "AST/ASTNode.h"
 #include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
 #include "AST/TypeNode.h"
@@ -14,15 +15,17 @@
 #include <vector>
 
 namespace TinyCobalt::AST {
+    // FIXME: Implement EvalType()
 
-    struct ConstExprNode {
+    struct ConstExprNode : EnableThisPointer<ConstExprNode> {
         const std::string value;
         TypeNodePtr type;
         explicit ConstExprNode(std::string value) : value(value), type(nullptr) {}
         ASTNodeGen traverse() { co_yield type; }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
-    struct AssignNode {
+    struct AssignNode : EnableThisPointer<AssignNode> {
         ExprNodePtr lhs;
         ExprNodePtr rhs;
         explicit AssignNode(ExprNodePtr lhs, ExprNodePtr rhs) : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
@@ -30,6 +33,7 @@ namespace TinyCobalt::AST {
             co_yield lhs;
             co_yield rhs;
         }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
     struct BinaryNode : public EnableThisPointer<BinaryNode> {
@@ -44,16 +48,18 @@ namespace TinyCobalt::AST {
             co_yield lhs;
             co_yield rhs;
         }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
-    struct UnaryNode {
+    struct UnaryNode : public EnableThisPointer<UnaryNode> {
         const UnaryOp op;
         ExprNodePtr operand;
         explicit UnaryNode(UnaryOp op, ExprNodePtr operand) : op(std::move(op)), operand(std::move(operand)) {}
         ASTNodeGen traverse() { co_yield operand; }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
-    struct CastNode {
+    struct CastNode : public EnableThisPointer<CastNode> {
         TypeNodePtr type;
         ExprNodePtr operand;
         explicit CastNode(TypeNodePtr type, ExprNodePtr operand) : type(std::move(type)), operand(std::move(operand)) {}
@@ -61,9 +67,10 @@ namespace TinyCobalt::AST {
             co_yield type;
             co_yield operand;
         }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
-    struct ConditionNode {
+    struct ConditionNode : public EnableThisPointer<ConditionNode> {
         ExprNodePtr condition;
         ExprNodePtr trueBranch;
         ExprNodePtr falseBranch;
@@ -74,9 +81,10 @@ namespace TinyCobalt::AST {
             co_yield trueBranch;
             co_yield falseBranch;
         }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
-    struct FuncCallNode {
+    struct FuncCallNode : public EnableThisPointer<FuncCallNode> {
         ExprNodePtr func;
         std::vector<ExprNodePtr> args;
         explicit FuncCallNode(ExprNodePtr func, std::vector<ExprNodePtr> args = {}) :
@@ -86,6 +94,7 @@ namespace TinyCobalt::AST {
             for (auto &arg: args)
                 co_yield arg;
         }
+        AST::TypeNodePtr EvalType() { return nullptr; }
     };
 
 } // namespace TinyCobalt::AST
