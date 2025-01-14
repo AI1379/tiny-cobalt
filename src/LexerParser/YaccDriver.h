@@ -34,7 +34,7 @@ namespace TinyCobalt::LexerParser {
 
         std::map<std::string, AST::ExprNodePtr> variables;
 
-        AST::ASTRootNodePtr result;
+        AST::ASTRootPtr result;
 
         // Start parsing.
         int parse();

@@ -21,7 +21,8 @@
 #define TINY_COBALT_AST_NODES(X, ...)                                                                                  \
     TINY_COBALT_AST_EXPR_NODES(X, __VA_ARGS__)                                                                         \
     TINY_COBALT_AST_STMT_NODES(X, __VA_ARGS__)                                                                         \
-    TINY_COBALT_AST_TYPE_NODES(X, __VA_ARGS__)
+    TINY_COBALT_AST_TYPE_NODES(X, __VA_ARGS__)                                                                         \
+    X(ASTRoot, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 
@@ -30,9 +31,6 @@ namespace TinyCobalt::AST {
     TINY_COBALT_AST_EXPR_NODES(REG_NODE_EQ)
     TINY_COBALT_AST_STMT_NODES(REG_NODE_EQ)
     TINY_COBALT_AST_TYPE_NODES(REG_NODE_EQ)
-    // REG_NODE_EQ(ExprNode, )
-    // REG_NODE_EQ(StmtNode, )
-    // REG_NODE_EQ(TypeNode, )
 
 #undef REG_NODE_EQ
 
@@ -96,7 +94,20 @@ namespace TinyCobalt::AST {
 
     // TODO: use more strict proxy to restrict these types
     using StmtNodePtr = ASTNodePtr;
-    using TypeNodePtr = ASTNodePtr;
+    
+    struct TypeNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemConvertibleTo, bool(const pro::proxy<TypeNodeProxy> &) const> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept TypeNodeConcept = pro::proxiable<T *, TypeNodeProxy>;
+    template<typename T>
+    concept TypeNodePtrConcept = pro::proxiable<T, TypeNodeProxy>;
+    using TypeNodePtr = pro::proxy<TypeNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<TypeNodePtr>, "TypeNodePtr is not an ASTNodePtr");
 
     struct ExprNodeProxy // NOLINT
         : pro::facade_builder // NOLINT
@@ -110,7 +121,7 @@ namespace TinyCobalt::AST {
     concept ExprNodePtrConcept = pro::proxiable<T, ExprNodeProxy>;
     using ExprNodePtr = pro::proxy<ExprNodeProxy>;
 
-    static_assert(ASTNodePtrConcept<ExprNodePtr>);
+    static_assert(ASTNodePtrConcept<ExprNodePtr>, "ExprNodePtr is not an ASTNodePtr");
 
     struct ASTRootNode : public EnableThisPointer<ASTRootNode> {
         std::vector<ASTNodePtr> children;
@@ -128,7 +139,9 @@ namespace TinyCobalt::AST {
             }
         }
     };
-    using ASTRootNodePtr = std::shared_ptr<ASTRootNode>;
+    using ASTRootPtr = std::shared_ptr<ASTRootNode>;
+
+    static_assert(ASTNodePtrConcept<ASTRootPtr>, "ASTRootPtr is not an ASTNodePtr");
 
     inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) {
         // TODO: implement this;
@@ -136,6 +149,7 @@ namespace TinyCobalt::AST {
     }
 
     template<typename T>
+        requires ASTNodePtrConcept<T>
     inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &nodes) {
         for (const auto &node: nodes) {
             os << node << std::endl;

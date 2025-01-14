@@ -6,6 +6,7 @@
 #define TINY_COBALT_INCLUDE_AST_TYPENODE_H_
 
 #include <memory>
+#include <proxy.h>
 #include <variant>
 
 #define TINY_COBALT_AST_TYPE_NODES(X, ...)                                                                             \
@@ -23,12 +24,7 @@ namespace TinyCobalt::AST {
 
 #undef REG_TYPE_NODE
 
-// #define REG_TYPE_NODE(Name, Suffix) Name##Suffix,
-
-//     using TypeNode = std::variant<TINY_COBALT_AST_TYPE_NODES(REG_TYPE_NODE, Node) std::monostate>;
-//     using TypeNodePtr = std::variant<TINY_COBALT_AST_TYPE_NODES(REG_TYPE_NODE, Ptr) std::nullptr_t>;
-
-// #undef REG_TYPE_NODE
+    PRO_DEF_MEM_DISPATCH(MemConvertibleTo, convertibleTo);
 
 } // namespace TinyCobalt::AST
 

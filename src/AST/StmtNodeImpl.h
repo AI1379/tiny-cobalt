@@ -90,7 +90,7 @@ namespace TinyCobalt::AST {
     };
 
     struct FuncDefNode : public EnableThisPointer<FuncDefNode> {
-        using ParamsElem = std::pair<TypeNodePtr, std::string>;
+        using ParamsElem = VariableDefPtr;
         const TypeNodePtr returnType;
         const std::string name;
         const std::vector<ParamsElem> params;
@@ -100,8 +100,8 @@ namespace TinyCobalt::AST {
         }
         ASTNodeGen traverse() {
             co_yield returnType;
-            for (auto &[type, _]: params)
-                co_yield type;
+            for (auto &param: params)
+                co_yield param;
             co_yield body;
         }
     };

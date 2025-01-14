@@ -19,6 +19,9 @@ namespace TinyCobalt::AST {
         const std::string name;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_yield nullptr; }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
+            return false;
+        }
     };
 
     struct FuncTypeNode : public EnableThisPointer<FuncTypeNode> {
@@ -30,6 +33,9 @@ namespace TinyCobalt::AST {
             co_yield returnType;
             for (auto &paramType: paramTypes)
                 co_yield paramType;
+        }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
+            return false;
         }
     };
 
@@ -43,6 +49,9 @@ namespace TinyCobalt::AST {
         ASTNodeGen traverse() {
             for (auto &arg: templateArgs)
                 co_yield arg;
+        }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
+            return false;
         }
     };
 
