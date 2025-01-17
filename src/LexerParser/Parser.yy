@@ -60,6 +60,8 @@ namespace TinyCobalt::LexerParser {
     COMMA ","
     SEMICOLON ";"
     COLON ":"
+    LESS "<"
+    GREATER ">"
 ;
 
 %token
@@ -71,9 +73,9 @@ namespace TinyCobalt::LexerParser {
     BREAK "break"
     CONTINUE "continue"
 
-%token <std::string> IDENTIFIER "identifier"
-%token <AST::ExprNodePtr> NUMBER "number"
-%token <char> CONST_CHAR "const_char"
+%token <std::string> identifier "identifier"
+%token <AST::ExprNodePtr> number "number"
+%token <char> const_char "const_char"
 %nterm <AST::ExprNodePtr> expr
 %nterm <std::vector<AST::ExprNodePtr>> exprs;
 %nterm <AST::AssignPtr> assignment;
@@ -96,7 +98,12 @@ namespace TinyCobalt::LexerParser {
 %nterm <std::vector<AST::StmtNodePtr>> stmts;
 
 // Type
+%token <AST::SimpleTypePtr> simple_type;
+%nterm <AST::FuncTypePtr> func_type;
+%nterm <AST::ComplexTypePtr> complex_type;
 %nterm <AST::TypeNodePtr> type;
+%nterm <std::vector<AST::TypeNodePtr>> types;
+%nterm <std::vector<AST::ASTNodePtr>> types_and_exprs;
 
 %printer { yyo << $$; } <*>;
 
@@ -171,8 +178,29 @@ stmts:
   stmt { $$ = {$1}; }
 | stmts stmt { $$ = std::move($1); $$.emplace_back($2); };
 
+simple_type: "identifier"
+
+func_type:
+  type "(" %empty ")" { $$ = driver.allocNode<AST::FuncTypeNode>($1, {}); }
+| type "(" types ")" { $$ = driver.allocNode<AST::FuncTypeNode>($1, $3); }
+
+complex_type:
+  "identifier" "<" types_and_exprs ">" { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
+
 type:
-  "identifier"
+  simple_type
+| func_type
+| complex_type
+
+types:
+  type { $$ = {$1}; }
+| types type { $$ = std::move($1); $$.emplace_back($2); }
+
+types_and_exprs:
+  type { $$ = {$1}; }
+| expr { $$ = {$1}; }
+| types_and_exprs type { $$ = std::move($1); $$.emplace_back($2); }
+| types_and_exprs expr { $$ = std::move($1); $$.emplace_back($2); }
 
 %left "+" "-";
 %left "*" "/" "%";
