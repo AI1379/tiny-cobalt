@@ -148,7 +148,7 @@ namespace TinyCobalt::LexerParser {
 
 %nterm <AST::TypeNodePtr> type;
 %nterm <std::vector<AST::TypeNodePtr>> types;
-%nterm <std::vector<AST::ASTNodePtr>> types_and_exprs;
+/* %nterm <std::vector<AST::ASTNodePtr>> types_and_exprs; */
 
 // Expr
 %nterm <AST::ConstExprPtr> const_expr;
@@ -168,7 +168,7 @@ namespace TinyCobalt::LexerParser {
 
 %start unit;
 unit: 
-  stmts { driver.result = std::make_shared<AST::ASTRootNode>($1); }
+  stmts { driver.result = driver.allocNode<AST::ASTRootNode>($1); }
 
 block:
   "{" stmts "}" { $$ = driver.allocNode<AST::BlockNode>($2); }
@@ -183,7 +183,6 @@ while:
 // TODO: Support variable_def in for stmt
 for:
   "for" "(" expr ";" expr ";" expr ")" stmt { $$ = driver.allocNode<AST::ForNode>($3, $5, $7, $9); }
-/* | "for" "(" variable_def ";" expr ";" expr ")" stmt { $$ = driver.allocNode<AST::ForNode>($3, $5, $7, $9); } */
 
 return:
   "return" expr ";" { $$ = driver.allocNode<AST::ReturnNode>($2); }
@@ -196,8 +195,6 @@ continue: "continue" ";" { $$ = driver.allocNode<AST::ContinueNode>(); }
 variable_def:
   type "identifier" ";" { $$ = driver.allocNode<AST::VariableDefNode>($1, $2, nullptr); }
 | type "identifier" "=" expr ";" { $$ = driver.allocNode<AST::VariableDefNode>($1, $2, $4); }
-// | "identifier" ":" type { $$ = driver.allocNode<AST::VariableDefNode>($2, $1, nullptr); }
-// | "identifier" ":" type "=" expr { $$ = driver.allocNode<AST::VariableDefNode>($2, $1, $4); }
 
 // TODO: Reduce-Reduce conflict
 param: type "identifier" { $$ = driver.allocNode<AST::FuncDefNode::ParamsElemNode>($1, $2); }
@@ -249,23 +246,24 @@ func_type:
   type "(" ")" { $$ = driver.allocNode<AST::FuncTypeNode>($1); }
 | type "(" types ")" { $$ = driver.allocNode<AST::FuncTypeNode>($1, $3); }
 
+// TODO: Support expr as template argument
 complex_type:
-  "identifier" "<" types_and_exprs ">" { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
+  "identifier" "<" types ">" %prec COMPLEX_TYPE { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
 
 type:
-  simple_type
-| func_type
-| complex_type
+  simple_type { $$ = $1; }
+| func_type { $$ = $1; }
+| complex_type { $$ = $1; }
 
 types:
   type { $$ = {$1}; }
 | types "," type { $$ = std::move($1); $$.emplace_back($3); }
 
-types_and_exprs:
+/* types_and_exprs:
   type { $$ = {$1}; }
 | expr { $$ = {$1}; }
 | types_and_exprs "," type { $$ = std::move($1); $$.emplace_back($3); }
-| types_and_exprs "," expr { $$ = std::move($1); $$.emplace_back($3); }
+| types_and_exprs "," expr { $$ = std::move($1); $$.emplace_back($3); } */
 
 const_expr:
   "int" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Int); }
@@ -313,16 +311,16 @@ binary:
 | expr "->" "identifier" { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::PtrMember, driver.allocNode<AST::VariableNode>($3)); }
 
 unary:
-  "+" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Positive, $2); }
-| "-" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Negative, $2); }
+  "+" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Positive, $2); } %prec UPLUS
+| "-" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Negative, $2); } %prec UMINUS
 | "!" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Not, $2); }
 | "~" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::BitNot, $2); }
-| "++" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PreInc, $2); }
-| "--" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PreDec, $2); }
-| expr "++" { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PostInc, $1); }
-| expr "--" { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PostDec, $1); }
-| "&" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Addr, $2); }
-| "*" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Deref, $2); }
+| "++" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PreInc, $2); } %prec PREINC
+| "--" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PreDec, $2); } %prec PREDEC
+| expr "++" { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PostInc, $1); } 
+| expr "--" { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::PostDec, $1); } 
+| "&" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Addr, $2); } %prec ADDR
+| "*" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Deref, $2); } %prec DEREF
 
 comma_expr:
   expr { $$ = {$1}; }
@@ -334,10 +332,9 @@ multiary:
 | "identifier" "[" "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1); }
 | "identifier" "[" comma_expr "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1, $3); }
 // FIXME: Reduce-Reduce conflict
-| comma_expr { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Comma, "", $1); }
 
 cast:
-  "static_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Static, $3, $6); }
+  "static_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Static, $3, $6); } 
 | "const_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Const, $3, $6); }
 | "reinterpret_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Reinterpret, $3, $6); }
 
@@ -345,8 +342,7 @@ condition:
   expr "?" expr ":" expr { $$ = driver.allocNode<AST::ConditionNode>($1, $3, $5); }
 
 expr:
-  %empty { $$ = nullptr; }
-| const_expr { $$ = $1; }
+  const_expr { $$ = $1; }
 | variable { $$ = $1; }
 | binary { $$ = $1; }
 | unary { $$ = $1; }
@@ -354,8 +350,27 @@ expr:
 | cast { $$ = $1; }
 | condition { $$ = $1; }
 
+%left ",";
+%right "=" "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>=";
+%right "?" ":";
+%left "||";
+%left "&&";
+%left "<" "<=" ">" ">=" "==" "!=";
+%left "<<" ">>";
+%left "|";
+%left "^";
+%left "&";
 %left "+" "-";
 %left "*" "/" "%";
+%right UPLUS UMINUS;
+%left "++" "--";
+%right PREINC PREDEC;
+%right ADDR DEREF;
+%right "!" "~";
+%left "(" ")" "[" "]" "{" "}";
+%left "." "->";
+%right "if" "else" "while" "for" "return" "break" "continue" "struct" "using" "static_cast" "const_cast" "reinterpret_cast";
+%left COMPLEX_TYPE;
 
 %%
 
