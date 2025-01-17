@@ -19,9 +19,7 @@ namespace TinyCobalt::AST {
         const std::string name;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_yield nullptr; }
-        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
-            return false;
-        }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
     };
 
     struct FuncTypeNode : public EnableThisPointer<FuncTypeNode> {
@@ -29,16 +27,20 @@ namespace TinyCobalt::AST {
         const std::vector<TypeNodePtr> paramTypes;
         FuncTypeNode(TypeNodePtr returnType, std::vector<TypeNodePtr> paramTypes) :
             returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
+        FuncTypeNode(TypeNodePtr returnType) : returnType(std::move(returnType)), paramTypes() {}
         ASTNodeGen traverse() {
             co_yield returnType;
             for (auto &paramType: paramTypes)
                 co_yield paramType;
         }
-        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
-            return false;
-        }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
     };
-
+    /**
+     * We do not use C-style pointer and array. Instead, we decide to use a C++ template-like form to represent complex
+     * types. For example, `int *` is represented as Pointer<int> in grammar and in AST the node is
+     * ComplexTypeNode("Pointer", {SimpleTypeNode("int")}). The grammar is more readable and the AST is more flexible,
+     * because complex function pointer and pointer array can be more structured.
+     */
     struct ComplexTypeNode : public EnableThisPointer<ComplexTypeNode> {
         const std::string templateName;
         // TODO: restrict the type of templateArgs
@@ -50,9 +52,7 @@ namespace TinyCobalt::AST {
             for (auto &arg: templateArgs)
                 co_yield arg;
         }
-        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const {
-            return false;
-        }
+        bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
     };
 
     namespace BuiltInType {

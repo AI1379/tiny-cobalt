@@ -11,6 +11,7 @@
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
 
+#include <memory>
 #include <vector>
 
 namespace TinyCobalt::AST {
@@ -27,6 +28,7 @@ namespace TinyCobalt::AST {
             // TODO: check if nullptr check is necessary
             co_yield elseStmt;
         }
+        void stmtFlag() {}
     };
 
     struct WhileNode : public EnableThisPointer<WhileNode> {
@@ -37,14 +39,15 @@ namespace TinyCobalt::AST {
             co_yield condition;
             co_yield body;
         }
+        void stmtFlag() {}
     };
 
     struct ForNode : public EnableThisPointer<ForNode> {
-        const StmtNodePtr init;
+        const ExprNodePtr init;
         const ExprNodePtr condition;
         const ExprNodePtr step;
         const StmtNodePtr body;
-        ForNode(StmtNodePtr init, ExprNodePtr condition, ExprNodePtr step, StmtNodePtr body) :
+        ForNode(ExprNodePtr init, ExprNodePtr condition, ExprNodePtr step, StmtNodePtr body) :
             init(std::move(init)), condition(std::move(condition)), step(std::move(step)), body(std::move(body)) {}
         ASTNodeGen traverse() {
             co_yield init;
@@ -52,12 +55,14 @@ namespace TinyCobalt::AST {
             co_yield step;
             co_yield body;
         }
+        void stmtFlag() {}
     };
 
     struct ReturnNode : public EnableThisPointer<ReturnNode> {
         const ExprNodePtr value;
         explicit ReturnNode(ExprNodePtr value) : value(std::move(value)) {}
         ASTNodeGen traverse() { co_yield value; }
+        void stmtFlag() {}
     };
 
     struct BlockNode : public EnableThisPointer<BlockNode> {
@@ -67,30 +72,39 @@ namespace TinyCobalt::AST {
             for (auto &stmt: stmts)
                 co_yield stmt;
         }
+        void stmtFlag() {}
     };
 
     struct BreakNode : public EnableThisPointer<BreakNode> {
         ASTNodeGen traverse() { co_yield nullptr; }
+        void stmtFlag() {}
     };
 
     struct ContinueNode : public EnableThisPointer<ContinueNode> {
         ASTNodeGen traverse() { co_yield nullptr; }
+        void stmtFlag() {}
     };
 
     struct VariableDefNode : public EnableThisPointer<VariableDefNode> {
         const TypeNodePtr type;
         const std::string name;
         const ExprNodePtr init;
-        VariableDefNode(TypeNodePtr type, std::string name, ExprNodePtr init) :
-            type(std::move(type)), name(std::move(name)), init(std::move(init)) {}
+        VariableDefNode(TypeNodePtr type, std::string name, ExprNodePtr init = nullptr) :
+            type(type), name(std::move(name)), init(init) {}
         ASTNodeGen traverse() {
             co_yield type;
             co_yield init;
         }
+        void stmtFlag() {}
     };
 
     struct FuncDefNode : public EnableThisPointer<FuncDefNode> {
-        using ParamsElem = VariableDefPtr;
+        // using ParamsElem = VariableDefPtr;
+        struct ParamsElemNode : VariableDefNode {
+            template<typename... Args>
+            ParamsElemNode(Args &&...args) : VariableDefNode(std::forward<Args>(args)...) {}
+        };
+        using ParamsElem = std::shared_ptr<ParamsElemNode>;
         const TypeNodePtr returnType;
         const std::string name;
         const std::vector<ParamsElem> params;
@@ -98,24 +112,34 @@ namespace TinyCobalt::AST {
         FuncDefNode(TypeNodePtr returnType, std::string name, std::vector<ParamsElem> params, StmtNodePtr body) :
             returnType(std::move(returnType)), name(std::move(name)), params(std::move(params)), body(std::move(body)) {
         }
+        FuncDefNode(TypeNodePtr returnType, std::string name, StmtNodePtr body) :
+            returnType(std::move(returnType)), name(std::move(name)), params(), body(std::move(body)) {}
         ASTNodeGen traverse() {
             co_yield returnType;
             for (auto &param: params)
                 co_yield param;
             co_yield body;
         }
+        void stmtFlag() {}
     };
 
     struct StructDefNode : public EnableThisPointer<StructDefNode> {
-        using FieldsElem = std::pair<TypeNodePtr, std::string>;
+        // using FieldsElem = VariableDefPtr;
+        struct FieldsElemNode : VariableDefNode {
+            template<typename... Args>
+            FieldsElemNode(Args &&...args) : VariableDefNode(std::forward<Args>(args)...) {}
+        };
+        using FieldsElem = std::shared_ptr<FieldsElemNode>;
         const std::string name;
         const std::vector<FieldsElem> fields;
         StructDefNode(std::string name, std::vector<FieldsElem> fields) :
             name(std::move(name)), fields(std::move(fields)) {}
+        explicit StructDefNode(std::string name) : name(std::move(name)), fields() {}
         ASTNodeGen traverse() {
-            for (auto &[type, _]: fields)
-                co_yield type;
+            for (auto field: fields)
+                co_yield field;
         }
+        void stmtFlag() {}
     };
 
     struct AliasDefNode : public EnableThisPointer<AliasDefNode> {
@@ -123,12 +147,14 @@ namespace TinyCobalt::AST {
         const TypeNodePtr type;
         AliasDefNode(std::string name, TypeNodePtr type) : name(std::move(name)), type(std::move(type)) {}
         ASTNodeGen traverse() { co_yield type; }
+        void stmtFlag() {}
     };
 
     struct ExprStmtNode : public EnableThisPointer<ExprStmtNode> {
         const ExprNodePtr expr;
         explicit ExprStmtNode(ExprNodePtr expr) : expr(std::move(expr)) {}
         ASTNodeGen traverse() { co_yield expr; }
+        void stmtFlag() {}
     };
 
 } // namespace TinyCobalt::AST

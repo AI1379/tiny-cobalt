@@ -5,19 +5,20 @@
 #ifndef TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 #define TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 
-#include <proxy.h>
 #include <cstddef>
 #include <memory>
+#include <proxy.h>
 #include <variant>
 
 #define TINY_COBALT_AST_EXPR_NODES(X, ...)                                                                             \
     X(ConstExpr, __VA_ARGS__)                                                                                          \
-    X(Assign, __VA_ARGS__)                                                                                             \
+    X(Variable, __VA_ARGS__)                                                                                           \
     X(Binary, __VA_ARGS__)                                                                                             \
     X(Unary, __VA_ARGS__)                                                                                              \
+    X(Multiary, __VA_ARGS__)                                                                                           \
     X(Cast, __VA_ARGS__)                                                                                               \
     X(Condition, __VA_ARGS__)                                                                                          \
-    X(FuncCall, __VA_ARGS__)
+    // X(FuncCall, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 
@@ -29,27 +30,18 @@ namespace TinyCobalt::AST {
 
 #undef REG_EXPR_NODE
 
-// #define REG_EXPR_NODE(Name, Suffix) Name##Suffix,
-
-//     using ExprNode = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Node) std::monostate>;
-//     using ExprNodePtr = std::variant<TINY_COBALT_AST_EXPR_NODES(REG_EXPR_NODE, Ptr) std::nullptr_t>;
-
-// #undef REG_EXPR_NODE
-
-    // clang-format off
     enum class UnaryOp {
-        Plus,
-        Minus,
+        Positive,
+        Negative,
         Not,
         BitNot,
         PreInc,
         PreDec,
         PostInc,
         PostDec,
-        Address,
-        Deref
+        Addr,
+        Deref,
     };
-    // clang-format on
 
     enum class BinaryOp {
         Add,
@@ -66,10 +58,10 @@ namespace TinyCobalt::AST {
         Or,
         Eq,
         Ne,
-        Lt,
-        Gt,
-        Le,
-        Ge,
+        Less,
+        Greater,
+        Leq,
+        Geq,
         Assign,
         AddAssign,
         SubAssign,
@@ -85,7 +77,29 @@ namespace TinyCobalt::AST {
         PtrMember,
     };
 
-    PRO_DEF_MEM_DISPATCH(MemEvalType, EvalType);
+    enum class MultiaryOp {
+        Subscript,
+        FuncCall,
+        Comma,
+    };
+
+    enum class ConstExprType {
+        Int,
+        HexInt,
+        OctInt,
+        BinInt,
+        Float,
+        String,
+        Char,
+    };
+
+    enum class CastType {
+        Static,
+        Reinterpret,
+        Const,
+    };
+
+    PRO_DEF_MEM_DISPATCH(MemEvalType, evalType);
 
 } // namespace TinyCobalt::AST
 

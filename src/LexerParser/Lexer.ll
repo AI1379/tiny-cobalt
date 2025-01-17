@@ -17,6 +17,7 @@
 %}
 
 %{
+// These are copied from bison's example.
 #if defined __clang__
 # define CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #endif

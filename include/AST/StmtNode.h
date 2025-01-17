@@ -6,6 +6,7 @@
 #define TINY_COBALT_INCLUDE_AST_STMTNODE_H_
 
 #include <memory>
+#include <proxy.h>
 #include <variant>
 
 #define TINY_COBALT_AST_STMT_NODES(X, ...)                                                                             \
@@ -32,12 +33,8 @@ namespace TinyCobalt::AST {
 
 #undef REG_STMT_NODE
 
-    // #define REG_STMT_NODE(Name, Suffix) Name##Suffix,
-
-    //     using StmtNode = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Node) std::monostate>;
-    //     using StmtNodePtr = std::variant<TINY_COBALT_AST_STMT_NODES(REG_STMT_NODE, Ptr) std::nullptr_t>;
-
-    // #undef REG_STMT_NODE
+    // TODO: flag for stmt nodes;
+    PRO_DEF_MEM_DISPATCH(MemStmtFlag, stmtFlag);
 
 } // namespace TinyCobalt::AST
 

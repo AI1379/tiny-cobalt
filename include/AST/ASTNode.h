@@ -92,9 +92,6 @@ namespace TinyCobalt::AST {
     using ASTNodePtr = pro::proxy<ASTNodeProxy>;
     using ASTNodeGen = Utility::Generator<ASTNodePtr>;
 
-    // TODO: use more strict proxy to restrict these types
-    using StmtNodePtr = ASTNodePtr;
-    
     struct TypeNodeProxy // NOLINT
         : pro::facade_builder // NOLINT
           ::add_facade<ASTNodeProxy, true> // NOLINT
@@ -122,6 +119,20 @@ namespace TinyCobalt::AST {
     using ExprNodePtr = pro::proxy<ExprNodeProxy>;
 
     static_assert(ASTNodePtrConcept<ExprNodePtr>, "ExprNodePtr is not an ASTNodePtr");
+
+    struct StmtNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemStmtFlag, void()> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept StmtNodeConcept = pro::proxiable<T *, StmtNodeProxy>;
+    template<typename T>
+    concept StmtNodePtrConcept = pro::proxiable<T, StmtNodeProxy>;
+    using StmtNodePtr = pro::proxy<StmtNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<StmtNodePtr>, "StmtNodePtr is not an ASTNodePtr");
 
     struct ASTRootNode : public EnableThisPointer<ASTRootNode> {
         std::vector<ASTNodePtr> children;

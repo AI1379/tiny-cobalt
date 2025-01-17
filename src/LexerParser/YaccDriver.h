@@ -38,7 +38,7 @@ namespace TinyCobalt::LexerParser {
 
         // Start parsing.
         int parse();
-        
+
         YaccLexer *lexer;
 
         // Handling the scanner.
@@ -47,6 +47,7 @@ namespace TinyCobalt::LexerParser {
         // The token's location used by the scanner.
         yy::location location;
 
+        // For customize allocation
         template<typename T, typename... Args>
         auto allocNode(Args &&...args) {
             return std::make_shared<T>(std::forward<Args>(args)...);
