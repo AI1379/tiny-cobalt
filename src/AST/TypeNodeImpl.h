@@ -44,8 +44,8 @@ namespace TinyCobalt::AST {
     struct ComplexTypeNode : public EnableThisPointer<ComplexTypeNode> {
         const std::string templateName;
         // TODO: restrict the type of templateArgs
-        const std::vector<ASTNodePtr> templateArgs;
-        explicit ComplexTypeNode(std::string templateName, std::vector<ASTNodePtr> templateArgs) :
+        const std::vector<TypeNodePtr> templateArgs;
+        explicit ComplexTypeNode(std::string templateName, std::vector<TypeNodePtr> templateArgs) :
             templateName(std::move(templateName)), templateArgs(std::move(templateArgs)) {}
 
         ASTNodeGen traverse() {
@@ -57,6 +57,7 @@ namespace TinyCobalt::AST {
 
     namespace BuiltInType {
         const SimpleTypeNode Int("int");
+        const SimpleTypeNode UInt("uint");
         const SimpleTypeNode Float("float");
         const SimpleTypeNode Bool("bool");
         const SimpleTypeNode Char("char");

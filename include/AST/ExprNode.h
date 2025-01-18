@@ -91,6 +91,7 @@ namespace TinyCobalt::AST {
         Float,
         String,
         Char,
+        Bool,
     };
 
     enum class CastType {

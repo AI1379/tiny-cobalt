@@ -101,9 +101,18 @@
   make_NUMBER (const std::string &s, const yy::parser::location_type& loc);
 %}
 
-id    [a-zA-Z][a-zA-Z_0-9]*
-int   [0-9]+
-blank [ \t\r]
+id      [a-zA-Z_][a-zA-Z_0-9]*
+int     [0-9]+
+hex_int 0x[0-9a-fA-F]+
+oct_int 0o[0-7]+
+bin_int 0b[01]+
+float   [0-9]*\.[0-9]+
+char    \'[^\']\'
+string  \"[^\"]*\"
+bool    true|false
+/* TODO: Currently we use _t suffix to distinguish type names from other identifiers. */
+type    uint|int|float|char|bool|void|[a-zA-Z][a-zA-Z_0-9]*_t
+blank   [ \t\r]
 
 %{
   // Code run each time a pattern is matched.
@@ -116,18 +125,79 @@ blank [ \t\r]
   // Code run each time yylex is called.
   loc.step ();
 %}
-{blank}+   loc.step ();
-\n+        loc.lines (yyleng); loc.step ();
+{blank}+   loc.step();
+\n+        loc.lines(yyleng); loc.step();
 
-"-"        return yy::parser::make_MINUS  (loc);
-"+"        return yy::parser::make_PLUS   (loc);
-"*"        return yy::parser::make_TIMES   (loc);
-"/"        return yy::parser::make_DIVIDE  (loc);
-"("        return yy::parser::make_LPAREN (loc);
-")"        return yy::parser::make_RPAREN (loc);
-":="       return yy::parser::make_ASSIGN (loc);
+"-"        return yy::parser::make_MINUS(loc);
+"+"        return yy::parser::make_PLUS(loc);
+"*"        return yy::parser::make_TIMES(loc);
+"/"        return yy::parser::make_DIVIDE(loc);
+"%"        return yy::parser::make_MODULO(loc);
+"&"        return yy::parser::make_BITAND(loc);
+"|"        return yy::parser::make_BITOR(loc);
+"^"        return yy::parser::make_BITXOR(loc);
+"~"        return yy::parser::make_BITNOT(loc);
+"<<"       return yy::parser::make_LSHIFT(loc);
+">>"       return yy::parser::make_RSHIFT(loc);
+"&&"       return yy::parser::make_AND(loc);
+"||"       return yy::parser::make_OR(loc);
+"!"        return yy::parser::make_NOT(loc);
+"=="       return yy::parser::make_EQ(loc);
+"!="       return yy::parser::make_NE(loc);
+"<"        return yy::parser::make_LESS(loc);
+"<="       return yy::parser::make_LEQ(loc);
+">"        return yy::parser::make_GREATER(loc);
+">="       return yy::parser::make_GEQ(loc);
+"++"       return yy::parser::make_INC(loc);
+"--"       return yy::parser::make_DEC(loc);
+"="        return yy::parser::make_ASSIGN(loc);
+"+="       return yy::parser::make_ADDASSIGN(loc);
+"-="       return yy::parser::make_SUBASSIGN(loc);
+"*="       return yy::parser::make_MULASSIGN(loc);
+"/="       return yy::parser::make_DIVASSIGN(loc);
+"%="       return yy::parser::make_MODASSIGN(loc);
+"&="       return yy::parser::make_ANDASSIGN(loc);
+"|="       return yy::parser::make_ORASSIGN(loc);
+"^="       return yy::parser::make_XORASSIGN(loc);
+"<<="      return yy::parser::make_LSHIFTASSIGN(loc);
+">>="      return yy::parser::make_RSHIFTASSIGN(loc);
+"."        return yy::parser::make_MEMBER(loc);
+"->"       return yy::parser::make_POINTER(loc);
 
-{int}      return make_NUMBER (yytext, loc);
+"("        return yy::parser::make_LPAREN(loc);
+")"        return yy::parser::make_RPAREN(loc);
+"["        return yy::parser::make_LBRACKET(loc);
+"]"        return yy::parser::make_RBRACKET(loc);
+"{"        return yy::parser::make_LBRACE(loc);
+"}"        return yy::parser::make_RBRACE(loc);
+","        return yy::parser::make_COMMA(loc);
+";"        return yy::parser::make_SEMICOLON(loc);
+":"        return yy::parser::make_COLON(loc);
+"?"        return yy::parser::make_COND(loc);
+
+"if"       return yy::parser::make_IF(loc);
+"else"     return yy::parser::make_ELSE(loc);
+"while"    return yy::parser::make_WHILE(loc);
+"for"      return yy::parser::make_FOR(loc);
+"return"   return yy::parser::make_RETURN(loc);
+"break"    return yy::parser::make_BREAK(loc);
+"continue" return yy::parser::make_CONTINUE(loc);
+"struct"   return yy::parser::make_STRUCT(loc);
+"using"    return yy::parser::make_USING(loc);
+
+"static_cast"      return yy::parser::make_STATIC_CAST(loc);
+"const_cast"       return yy::parser::make_CONST_CAST(loc);
+"reinterpret_cast" return yy::parser::make_REINTERPRET_CAST(loc);
+
+{int}      return yy::parser::make_INT(yytext, loc);
+{hex_int}  return yy::parser::make_HEX_INT(yytext, loc);
+{oct_int}  return yy::parser::make_OCT_INT(yytext, loc);
+{bin_int}  return yy::parser::make_BIN_INT(yytext, loc);
+{float}    return yy::parser::make_FLOAT(yytext, loc);
+{char}     return yy::parser::make_CHAR(yytext, loc);
+{string}   return yy::parser::make_STRING(yytext, loc);
+{bool}     return yy::parser::make_BOOL(yytext, loc);
+{type}     return yy::parser::make_TYPENAME(yytext, loc);
 {id}       return yy::parser::make_IDENTIFIER (yytext, loc);
 .          {
              throw yy::parser::syntax_error
@@ -136,19 +206,8 @@ blank [ \t\r]
 <<EOF>>    return yy::parser::make_YYEOF (loc);
 %%
 
-yy::parser::symbol_type
-make_NUMBER (const std::string &s, const yy::parser::location_type& loc)
-{
-  errno = 0;
-  long n = strtol (s.c_str(), NULL, 10);
-  if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
-    throw yy::parser::syntax_error (loc, "integer is out of range: " + s);
-  return yy::parser::make_NUMBER ((int) n, loc);
-}
-
 void TinyCobalt::LexerParser::YaccDriver::scan_begin ()
 {
-  /* yy_flex_debug = trace_scanning; */
   this->lexer = new YaccLexer;
   this->lexer->set_debug(trace_scanning);
   this->lexer->switch_streams(*(this->is), *(this->os));

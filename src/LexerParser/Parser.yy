@@ -2,7 +2,9 @@
  * Created by Renatus Madrigal on 12/26/2024
  */
 
-%skeleton "glr2.cc"
+// TODO: check if it is necessary to use glr instead of lalr1
+// %skeleton "glr2.cc"
+%skeleton "lalr1.cc"
 %require "3.8"
 %define api.namespace { TinyCobalt::LexerParser::yy }
 %header
@@ -48,8 +50,8 @@ namespace TinyCobalt::LexerParser {
 %token 
     LPAREN "("
     RPAREN ")"
-    LBRAKET "["
-    RBRAKET "]"
+    LBRACKET 
+    RBRACKET "]"
     LBRACE "{"
     RBRACE "}"
     COMMA ","
@@ -68,8 +70,8 @@ namespace TinyCobalt::LexerParser {
     BITXOR "^"
     BITNOT "~"
     // TODO: flex may not be able to distinguish between ">>" in template and ">>" in bitshift
-    BITLSHIFT "<<"
-    BITRSHIFT ">>"
+    LSHIFT "<<"
+    RSHIFT ">>"
     AND "&&"
     OR "||"
     NOT "!"
@@ -87,11 +89,11 @@ namespace TinyCobalt::LexerParser {
     MULASSIGN "*="
     DIVASSIGN "/="
     MODASSIGN "%="
-    BITANDASSIGN "&="
-    BITORASSIGN "|="
-    BITXORASSIGN "^="
-    BITLSHIFTASSIGN "<<="
-    BITRSHIFTASSIGN ">>="
+    ANDASSIGN "&="
+    ORASSIGN "|="
+    XORASSIGN "^="
+    LSHIFTASSIGN "<<="
+    RSHIFTASSIGN ">>="
     MEMBER "."
     POINTER "->"
     
@@ -111,14 +113,15 @@ namespace TinyCobalt::LexerParser {
     REINTERPRET_CAST "reinterpret_cast"
 
 %token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
+%token <std::string> TYPENAME "typename" // TODO: Merge TYPENAME token with IDENTIFIER token
 %token <std::string> INT "int"
 %token <std::string> HEX_INT "hex_int"
 %token <std::string> OCT_INT "oct_int"
 %token <std::string> BIN_INT "bin_int"
 %token <std::string> FLOAT "float"
-%token <std::string> CONST_CHAR "const_char"
-%token <std::string> CONST_STRING "const_string"
+%token <std::string> BOOL "bool" // TODO: bool
+%token <std::string> CHAR "const_char"
+%token <std::string> STRING "const_string"
 
 // Stmt
 %nterm <AST::IfPtr> if;
@@ -216,11 +219,11 @@ struct_fields:
 | struct_fields struct_field { $$ = std::move($1); $$.emplace_back($2); }
 
 struct_def:
-  "struct" "identifier" "{" struct_fields "}" ";" { $$ = driver.allocNode<AST::StructDefNode>($2, $4); }
-| "struct" "identifier" "{" "}" ";" { $$ = driver.allocNode<AST::StructDefNode>($2); }
+  "struct" "typename" "{" struct_fields "}" ";" { $$ = driver.allocNode<AST::StructDefNode>($2, $4); }
+| "struct" "typename" "{" "}" ";" { $$ = driver.allocNode<AST::StructDefNode>($2); }
 
 alias_def:
-  "using" "identifier" "=" type ";" { $$ = driver.allocNode<AST::AliasDefNode>($2, $4); }
+  "using" "typename" "=" type ";" { $$ = driver.allocNode<AST::AliasDefNode>($2, $4); }
 
 stmt:
   block { $$ = $1; }
@@ -240,7 +243,7 @@ stmts:
   stmt { $$ = {$1}; }
 | stmts stmt { $$ = std::move($1); $$.emplace_back($2); };
 
-simple_type: "identifier" { $$ = driver.allocNode<AST::SimpleTypeNode>($1); }
+simple_type: "typename" { $$ = driver.allocNode<AST::SimpleTypeNode>($1); }
 
 func_type:
   type "(" ")" { $$ = driver.allocNode<AST::FuncTypeNode>($1); }
@@ -248,7 +251,7 @@ func_type:
 
 // TODO: Support expr as template argument
 complex_type:
-  "identifier" "<" types ">" %prec COMPLEX_TYPE { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
+  "typename" "<" types ">"  { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
 
 type:
   simple_type { $$ = $1; }
@@ -273,6 +276,7 @@ const_expr:
 | "float" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Float); }
 | "const_string" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::String); }
 | "const_char" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Char); }
+| "bool" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Bool); }
 
 variable: "identifier" { $$ = driver.allocNode<AST::VariableNode>($1); }
 
@@ -331,7 +335,6 @@ multiary:
 | "identifier" "(" comma_expr ")" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::FuncCall, $1, $3); }
 | "identifier" "[" "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1); }
 | "identifier" "[" comma_expr "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1, $3); }
-// FIXME: Reduce-Reduce conflict
 
 cast:
   "static_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Static, $3, $6); } 
@@ -370,7 +373,6 @@ expr:
 %left "(" ")" "[" "]" "{" "}";
 %left "." "->";
 %right "if" "else" "while" "for" "return" "break" "continue" "struct" "using" "static_cast" "const_cast" "reinterpret_cast";
-%left COMPLEX_TYPE;
 
 %%
 
