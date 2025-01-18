@@ -16,6 +16,7 @@
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
 #include "Common/Generator.h"
+#include "Common/JSON.h"
 
 
 #define TINY_COBALT_AST_NODES(X, ...)                                                                                  \
@@ -69,6 +70,7 @@ namespace TinyCobalt::AST {
           ::add_convention<MemTraverse, Utility::Generator<pro::proxy<ASTNodeProxy>>()> // NOLINT
           // FIXME: erased type information may lead to memory leaks
           ::add_convention<MemThisPointer, void *() const> // NOLINT
+          ::add_facade<Common::ToJSONProxy> // NOLINT
           ::support_copy<pro::constraint_level::nontrivial> // NOLINT
           ::build {};
 
@@ -144,22 +146,29 @@ namespace TinyCobalt::AST {
                 co_yield child;
             }
         }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "ASTRoot";
+            json["children"] = Common::JSON::array();
+            for (const auto &child: children) {
+                json["children"].push_back(child->toJSON());
+            }
+            return json;
+        }
     };
     using ASTRootPtr = std::shared_ptr<ASTRootNode>;
 
-    static_assert(ASTNodePtrConcept<ASTRootPtr>, "ASTRootPtr is not an ASTNodePtr");
+    static_assert(ASTNodePtrConcept<ASTRootPtr>, "ASTNodePtrConcept<ASTRootPtr> is not satisfied.");
 
-    inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) {
-        // TODO: implement this;
-        return os;
-    }
+    inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) { return os << node->toJSON(); }
 
     template<typename T>
         requires ASTNodePtrConcept<T>
     inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &nodes) {
-        for (const auto &node: nodes) {
-            os << node << std::endl;
-        }
+        os << "[";
+        for (const auto &node: nodes)
+            os << node << ",";
+        os << "]";
         return os;
     }
 

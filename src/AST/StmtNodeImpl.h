@@ -6,15 +6,14 @@
 #define TINY_COBALT_SRC_AST_STMTNODEIMPL_H_
 
 #include "AST/ASTNode.h"
-#include "AST/ASTVisitor.h"
-#include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
-#include "AST/TypeNode.h"
+#include "Common/JSON.h"
 
 #include <memory>
 #include <vector>
 
 namespace TinyCobalt::AST {
+    // TODO: remove stmtFlag()
 
     struct IfNode : public EnableThisPointer<IfNode> {
         const ExprNodePtr condition;
@@ -29,6 +28,14 @@ namespace TinyCobalt::AST {
             co_yield elseStmt;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "If";
+            json["condition"] = condition->toJSON();
+            json["thenStmt"] = thenStmt->toJSON();
+            json["elseStmt"] = elseStmt ? elseStmt->toJSON() : nullptr;
+            return json;
+        }
     };
 
     struct WhileNode : public EnableThisPointer<WhileNode> {
@@ -40,6 +47,13 @@ namespace TinyCobalt::AST {
             co_yield body;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "While";
+            json["condition"] = condition->toJSON();
+            json["body"] = body->toJSON();
+            return json;
+        }
     };
 
     struct ForNode : public EnableThisPointer<ForNode> {
@@ -56,6 +70,15 @@ namespace TinyCobalt::AST {
             co_yield body;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "For";
+            json["init"] = init->toJSON();
+            json["condition"] = condition->toJSON();
+            json["step"] = step->toJSON();
+            json["body"] = body->toJSON();
+            return json;
+        }
     };
 
     struct ReturnNode : public EnableThisPointer<ReturnNode> {
@@ -63,6 +86,12 @@ namespace TinyCobalt::AST {
         explicit ReturnNode(ExprNodePtr value) : value(std::move(value)) {}
         ASTNodeGen traverse() { co_yield value; }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Return";
+            json["value"] = value ? value->toJSON() : nullptr;
+            return json;
+        }
     };
 
     struct BlockNode : public EnableThisPointer<BlockNode> {
@@ -73,16 +102,35 @@ namespace TinyCobalt::AST {
                 co_yield stmt;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Block";
+            json["stmts"] = Common::JSON::array();
+            for (const auto &stmt: stmts) {
+                json["stmts"].push_back(stmt->toJSON());
+            }
+            return json;
+        }
     };
 
     struct BreakNode : public EnableThisPointer<BreakNode> {
         ASTNodeGen traverse() { co_yield nullptr; }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Break";
+            return json;
+        }
     };
 
     struct ContinueNode : public EnableThisPointer<ContinueNode> {
         ASTNodeGen traverse() { co_yield nullptr; }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Continue";
+            return json;
+        }
     };
 
     struct VariableDefNode : public EnableThisPointer<VariableDefNode> {
@@ -96,6 +144,14 @@ namespace TinyCobalt::AST {
             co_yield init;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "VariableDef";
+            json["type"] = type->toJSON();
+            json["name"] = name;
+            json["init"] = init ? init->toJSON() : nullptr;
+            return json;
+        }
     };
 
     struct FuncDefNode : public EnableThisPointer<FuncDefNode> {
@@ -121,6 +177,18 @@ namespace TinyCobalt::AST {
             co_yield body;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "FuncDef";
+            json["returnType"] = returnType->toJSON();
+            json["name"] = name;
+            json["params"] = Common::JSON::array();
+            for (const auto &param: params) {
+                json["params"].push_back(param->toJSON());
+            }
+            json["body"] = body->toJSON();
+            return json;
+        }
     };
 
     struct StructDefNode : public EnableThisPointer<StructDefNode> {
@@ -140,6 +208,16 @@ namespace TinyCobalt::AST {
                 co_yield field;
         }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "StructDef";
+            json["name"] = name;
+            json["fields"] = Common::JSON::array();
+            for (const auto &field: fields) {
+                json["fields"].push_back(field->toJSON());
+            }
+            return json;
+        }
     };
 
     struct AliasDefNode : public EnableThisPointer<AliasDefNode> {
@@ -148,6 +226,13 @@ namespace TinyCobalt::AST {
         AliasDefNode(std::string name, TypeNodePtr type) : name(std::move(name)), type(std::move(type)) {}
         ASTNodeGen traverse() { co_yield type; }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "AliasDef";
+            json["name"] = name;
+            json["type"] = type->toJSON();
+            return json;
+        }
     };
 
     struct ExprStmtNode : public EnableThisPointer<ExprStmtNode> {
@@ -155,7 +240,20 @@ namespace TinyCobalt::AST {
         explicit ExprStmtNode(ExprNodePtr expr) : expr(std::move(expr)) {}
         ASTNodeGen traverse() { co_yield expr; }
         void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "ExprStmt";
+            json["expr"] = expr->toJSON();
+            return json;
+        }
     };
+
+#define STMT_NODE_ASSERT(Name, ...)                                                                                    \
+    static_assert(StmtNodePtrConcept<Name##Ptr>, "StmtNodePtrConcept<" #Name "Ptr> is not satisfied.");
+
+    TINY_COBALT_AST_STMT_NODES(STMT_NODE_ASSERT);
+
+#undef STMT_NODE_ASSERT
 
 } // namespace TinyCobalt::AST
 

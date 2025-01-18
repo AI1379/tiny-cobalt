@@ -6,10 +6,10 @@
 #define TINY_COBALT_SRC_AST_EXPRNODEIMPL_H_
 
 #include "AST/ASTNode.h"
-#include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
-#include "AST/TypeNode.h"
+#include "Common/JSON.h"
 
+#include <magic_enum.hpp>
 #include <proxy.h>
 #include <string>
 #include <vector>
@@ -23,6 +23,13 @@ namespace TinyCobalt::AST {
         explicit ConstExprNode(std::string value, ConstExprType expr_type) : value(value), expr_type(expr_type) {}
         ASTNodeGen traverse() { co_return; }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "ConstExpr";
+            json["value"] = value;
+            json["expr_type"] = magic_enum::enum_name(expr_type);
+            return json;
+        }
     };
 
     struct VariableNode : public EnableThisPointer<VariableNode> {
@@ -30,6 +37,12 @@ namespace TinyCobalt::AST {
         explicit VariableNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_return; }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Variable";
+            json["name"] = name;
+            return json;
+        }
     };
 
     // TODO: support infix for binary function like Haskell
@@ -46,6 +59,14 @@ namespace TinyCobalt::AST {
             co_yield rhs;
         }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Binary";
+            json["op"] = magic_enum::enum_name(op);
+            json["lhs"] = lhs->toJSON();
+            json["rhs"] = rhs->toJSON();
+            return json;
+        }
     };
 
     struct UnaryNode : public EnableThisPointer<UnaryNode> {
@@ -54,6 +75,13 @@ namespace TinyCobalt::AST {
         explicit UnaryNode(UnaryOp op, ExprNodePtr operand) : op(std::move(op)), operand(std::move(operand)) {}
         ASTNodeGen traverse() { co_yield operand; }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Unary";
+            json["op"] = magic_enum::enum_name(op);
+            json["operand"] = operand->toJSON();
+            return json;
+        }
     };
 
     // Operators with multiple params, for example, operator[].
@@ -66,6 +94,17 @@ namespace TinyCobalt::AST {
             op(op), object(std::move(obj)), operands(std::move(operands)) {}
         ASTNodeGen traverse() { co_return; }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Multiary";
+            json["op"] = magic_enum::enum_name(op);
+            json["object"] = object;
+            json["operands"] = Common::JSON::array();
+            for (const auto &operand: operands) {
+                json["operands"].push_back(operand->toJSON());
+            }
+            return json;
+        }
     };
 
     struct CastNode : public EnableThisPointer<CastNode> {
@@ -79,6 +118,14 @@ namespace TinyCobalt::AST {
             co_yield operand;
         }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Cast";
+            json["op"] = magic_enum::enum_name(op);
+            json["type"] = type->toJSON();
+            json["operand"] = operand->toJSON();
+            return json;
+        }
     };
 
     // Three way conditional operator
@@ -94,6 +141,14 @@ namespace TinyCobalt::AST {
             co_yield falseBranch;
         }
         AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Condition";
+            json["condition"] = condition->toJSON();
+            json["trueBranch"] = trueBranch->toJSON();
+            json["falseBranch"] = falseBranch->toJSON();
+            return json;
+        }
     };
 
 #define EXPR_NODE_ASSERT(Name, ...)                                                                                    \
