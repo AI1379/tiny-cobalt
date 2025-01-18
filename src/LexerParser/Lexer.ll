@@ -101,7 +101,7 @@
   make_NUMBER (const std::string &s, const yy::parser::location_type& loc);
 %}
 
-id      [a-zA-Z_][a-zA-Z_0-9]*
+id      [a-z_][a-zA-Z_0-9]*
 int     [0-9]+
 hex_int 0x[0-9a-fA-F]+
 oct_int 0o[0-7]+
@@ -110,8 +110,8 @@ float   [0-9]*\.[0-9]+
 char    \'[^\']\'
 string  \"[^\"]*\"
 bool    true|false
-/* TODO: Currently we use _t suffix to distinguish type names from other identifiers. */
-type    uint|int|float|char|bool|void|[a-zA-Z][a-zA-Z_0-9]*_t
+/* TODO: Currently we use upper case beginning to distinguish type names from other identifiers. */
+type    uint|int|float|char|bool|void|[A-Z][a-zA-Z_0-9]*
 blank   [ \t\r]
 
 %{
