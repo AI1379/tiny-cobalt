@@ -96,20 +96,6 @@ namespace TinyCobalt::AST {
         AST::TypeNodePtr evalType() { return nullptr; }
     };
 
-    // TODO: this might be able to be combined with operator() and thus become a MultiaryNode with operator()
-    // struct FuncCallNode : public EnableThisPointer<FuncCallNode> {
-    //     ExprNodePtr func;
-    //     std::vector<ExprNodePtr> args;
-    //     explicit FuncCallNode(ExprNodePtr func, std::vector<ExprNodePtr> args = {}) :
-    //         func(std::move(func)), args(std::move(args)) {}
-    //     ASTNodeGen traverse() {
-    //         co_yield func;
-    //         for (auto &arg: args)
-    //             co_yield arg;
-    //     }
-    //     AST::TypeNodePtr evalType() { return nullptr; }
-    // };
-
 #define EXPR_NODE_ASSERT(Name, ...)                                                                                    \
     static_assert(ExprNodePtrConcept<Name##Ptr>, "ExprNodePtrConcept<" #Name "Ptr> is not satisfied.");
 

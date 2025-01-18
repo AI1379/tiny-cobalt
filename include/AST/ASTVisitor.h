@@ -39,8 +39,7 @@ namespace TinyCobalt::AST {
         requires ASTVisitorConcept<VisitorImpl>
     class BaseASTVisitor {
     public:
-        // TODO: down cast TraverseablePtr to specific Node Pointer using template or overload
-        // INTEERFACES
+        // INTERFACES
         void beforeSubtree(ASTNodePtr node) {}
         void afterSubtree(ASTNodePtr node) {}
         void beforeChild(ASTNodePtr node, ASTNodePtr child) {}
@@ -50,17 +49,16 @@ namespace TinyCobalt::AST {
         void visit(this VisitorImpl &self, ASTNodePtr node) {
             if (node)
                 self.beforeSubtree(node);
-            if (self.breaked) {
-                self.breaked = false;
+            if (self.broke) {
+                self.broke = false;
                 return;
             }
-            // TODO: let node->traverse return a enum class to indicate the type of child node
             for (auto child: node->traverse()) {
                 if (!child)
                     continue;
                 self.beforeChild(node, child);
-                if (self.breaked) {
-                    self.breaked = false;
+                if (self.broke) {
+                    self.broke = false;
                     break;
                 }
                 if (self.continued) {
@@ -75,8 +73,8 @@ namespace TinyCobalt::AST {
         }
 
     protected:
-        bool breaked = false, continued = false;
-        void break_() { breaked = true; }
+        bool broke = false, continued = false;
+        void break_() { broke = true; }
         void continue_() { continued = true; }
     };
 } // namespace TinyCobalt::AST

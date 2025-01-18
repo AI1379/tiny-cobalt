@@ -34,11 +34,6 @@ namespace TinyCobalt::AST {
 
 #undef REG_NODE_EQ
 
-    // using ASTNode = Utility::UnionedVariant<ExprNode, StmtNode, TypeNode>;
-    // using ASTNodePtr = Utility::UnionedVariant<ExprNodePtr, StmtNodePtr, TypeNodePtr>;
-
-    // FIXME: There may be memory leaks
-
     PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
     PRO_DEF_MEM_DISPATCH(MemThisPointer, thisPointer);
 

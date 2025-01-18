@@ -119,7 +119,7 @@ namespace TinyCobalt::LexerParser {
 %token <std::string> OCT_INT "oct_int"
 %token <std::string> BIN_INT "bin_int"
 %token <std::string> FLOAT "float"
-%token <std::string> BOOL "bool" // TODO: bool
+%token <std::string> BOOL "bool"
 %token <std::string> CHAR "const_char"
 %token <std::string> STRING "const_string"
 
@@ -199,7 +199,6 @@ variable_def:
   type "identifier" ";" { $$ = driver.allocNode<AST::VariableDefNode>($1, $2, nullptr); }
 | type "identifier" "=" expr ";" { $$ = driver.allocNode<AST::VariableDefNode>($1, $2, $4); }
 
-// TODO: Reduce-Reduce conflict
 param: type "identifier" { $$ = driver.allocNode<AST::FuncDefNode::ParamsElemNode>($1, $2); }
 params:
   param { $$ = {$1}; }

@@ -32,8 +32,6 @@ namespace TinyCobalt::LexerParser {
     public:
         YaccDriver();
 
-        std::map<std::string, AST::ExprNodePtr> variables;
-
         AST::ASTRootPtr result;
 
         // Start parsing.
@@ -52,8 +50,6 @@ namespace TinyCobalt::LexerParser {
         auto allocNode(Args &&...args) {
             return std::make_shared<T>(std::forward<Args>(args)...);
         }
-
-        AST::ASTNodePtr getCurrent() const { return stack_.top(); }
 
     private:
         // The name of the file being parsed.
