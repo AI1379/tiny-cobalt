@@ -5,6 +5,9 @@
 #ifndef TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 #define TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 
+#include "AST/ASTNode.h"
+#include "AST/TypeNode.h"
+
 #include <memory>
 #include <proxy.h>
 
@@ -98,6 +101,22 @@ namespace TinyCobalt::AST {
     };
 
     PRO_DEF_MEM_DISPATCH(MemEvalType, evalType);
+
+
+    struct ExprNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemEvalType, AST::TypeNodePtr()> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept ExprNodeConcept = pro::proxiable<T *, ExprNodeProxy>;
+    template<typename T>
+    concept ExprNodePtrConcept = pro::proxiable<T, ExprNodeProxy>;
+    using ExprNodePtr = pro::proxy<ExprNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<ExprNodePtr>, "ExprNodePtr is not an ASTNodePtr");
+
 
 } // namespace TinyCobalt::AST
 

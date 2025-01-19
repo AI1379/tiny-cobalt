@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <proxy.h>
+#include "AST/ASTNode.h"
 
 #define TINY_COBALT_AST_STMT_NODES(X, ...)                                                                             \
     X(If, __VA_ARGS__)                                                                                                 \
@@ -34,6 +35,20 @@ namespace TinyCobalt::AST {
 
     // TODO: flag for stmt nodes;
     PRO_DEF_MEM_DISPATCH(MemStmtFlag, stmtFlag);
+
+    struct StmtNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemStmtFlag, void()> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept StmtNodeConcept = pro::proxiable<T *, StmtNodeProxy>;
+    template<typename T>
+    concept StmtNodePtrConcept = pro::proxiable<T, StmtNodeProxy>;
+    using StmtNodePtr = pro::proxy<StmtNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<StmtNodePtr>, "StmtNodePtr is not an ASTNodePtr");
 
 } // namespace TinyCobalt::AST
 

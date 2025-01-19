@@ -7,10 +7,11 @@
 
 #include <iostream>
 #include <utility>
-#include "AST/ASTNode.h"
+#include "AST/AST.h"
 #include "LexerParser/Location.h"
 
 namespace TinyCobalt::LexerParser {
+    // TODO: use concept to restrict Driver type.
     // We use template wrapper to allow the parser to be used with different driver classes.
     template<typename Driver>
     class BaseParser {
@@ -22,6 +23,7 @@ namespace TinyCobalt::LexerParser {
         }
         ~BaseParser() { delete driver; }
 
+        // Return an error code because bison uses it.
         int parse() { return driver->parse(); }
 
         BaseParser<Driver> &switchInput(std::istream *is) {
@@ -33,8 +35,7 @@ namespace TinyCobalt::LexerParser {
             return *this;
         }
 
-        AST::ASTNodePtr result() { return driver->result; }
-
+        AST::ASTRootPtr result() { return driver->result; }
 
     private:
         Driver *driver;

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <proxy.h>
+#include "AST/ASTNode.h"
 
 #define TINY_COBALT_AST_TYPE_NODES(X, ...)                                                                             \
     X(SimpleType, __VA_ARGS__)                                                                                         \
@@ -24,6 +25,20 @@ namespace TinyCobalt::AST {
 #undef REG_TYPE_NODE
 
     PRO_DEF_MEM_DISPATCH(MemConvertibleTo, convertibleTo);
+
+    struct TypeNodeProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTNodeProxy, true> // NOLINT
+          ::add_convention<MemConvertibleTo, bool(const pro::proxy<TypeNodeProxy> &) const> // NOLINT
+          ::build {};
+
+    template<typename T>
+    concept TypeNodeConcept = pro::proxiable<T *, TypeNodeProxy>;
+    template<typename T>
+    concept TypeNodePtrConcept = pro::proxiable<T, TypeNodeProxy>;
+    using TypeNodePtr = pro::proxy<TypeNodeProxy>;
+
+    static_assert(ASTNodePtrConcept<TypeNodePtr>, "TypeNodePtr is not an ASTNodePtr");
 
 } // namespace TinyCobalt::AST
 
