@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <proxy.h>
-#include <variant>
 
 #define TINY_COBALT_AST_TYPE_NODES(X, ...)                                                                             \
     X(SimpleType, __VA_ARGS__)                                                                                         \

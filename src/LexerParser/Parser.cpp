@@ -3,6 +3,5 @@
 //
 
 #include "LexerParser/Parser.h"
-#include "YaccDriver.h"
 
 namespace TinyCobalt::LexerParser {} // namespace TinyCobalt::LexerParser

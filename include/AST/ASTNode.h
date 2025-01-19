@@ -6,8 +6,8 @@
 #define TINY_COBALT_INCLUDE_AST_BASEASTNODE_H_
 
 #include <cassert>
+#include <iostream>
 #include <memory>
-#include <ostream>
 #include <proxy.h>
 #include <type_traits>
 #include <typeinfo>
@@ -27,13 +27,13 @@
 
 namespace TinyCobalt::AST {
 
-#define REG_NODE_EQ(Name, ...) bool operator==(const Name##Ptr &, const Name##Ptr &);
+// #define REG_NODE_EQ(Name, ...) bool operator==(const Name##Ptr &, const Name##Ptr &);
 
-    TINY_COBALT_AST_EXPR_NODES(REG_NODE_EQ)
-    TINY_COBALT_AST_STMT_NODES(REG_NODE_EQ)
-    TINY_COBALT_AST_TYPE_NODES(REG_NODE_EQ)
+//     TINY_COBALT_AST_EXPR_NODES(REG_NODE_EQ)
+//     TINY_COBALT_AST_STMT_NODES(REG_NODE_EQ)
+//     TINY_COBALT_AST_TYPE_NODES(REG_NODE_EQ)
 
-#undef REG_NODE_EQ
+// #undef REG_NODE_EQ
 
     PRO_DEF_MEM_DISPATCH(MemTraverse, traverse);
     PRO_DEF_MEM_DISPATCH(MemThisPointer, thisPointer);
@@ -49,6 +49,11 @@ namespace TinyCobalt::AST {
             bool containType() const noexcept {
                 const ContainTypeRefl &self = pro::proxy_reflect<R>(pro::access_proxy<F>(*this));
                 return self.type_.hash_code() == typeid(T).hash_code();
+            }
+
+            std::string type() const noexcept {
+                const ContainTypeRefl &self = pro::proxy_reflect<R>(pro::access_proxy<F>(*this));
+                return self.type_.name();
             }
 
             template<typename T>
@@ -132,15 +137,8 @@ namespace TinyCobalt::AST {
     static_assert(ASTNodePtrConcept<StmtNodePtr>, "StmtNodePtr is not an ASTNodePtr");
 
     struct ASTRootNode : public EnableThisPointer<ASTRootNode> {
-        std::vector<ASTNodePtr> children;
-        explicit ASTRootNode(std::vector<ASTNodePtr> children) : children(std::move(children)) {}
-        template<typename T>
-            requires ASTNodePtrConcept<T>
-        explicit ASTRootNode(std::vector<T> children) {
-            for (const auto &child: children) {
-                this->children.push_back(child);
-            }
-        }
+        std::vector<StmtNodePtr> children;
+        explicit ASTRootNode(std::vector<StmtNodePtr> children) : children(std::move(children)) {}
         ASTNodeGen traverse() {
             for (const auto &child: children) {
                 co_yield child;

@@ -5,10 +5,8 @@
 #ifndef TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 #define TINY_COBALT_INCLUDE_AST_EXPRNODE_H_
 
-#include <cstddef>
 #include <memory>
 #include <proxy.h>
-#include <variant>
 
 #define TINY_COBALT_AST_EXPR_NODES(X, ...)                                                                             \
     X(ConstExpr, __VA_ARGS__)                                                                                          \
@@ -17,8 +15,7 @@
     X(Unary, __VA_ARGS__)                                                                                              \
     X(Multiary, __VA_ARGS__)                                                                                           \
     X(Cast, __VA_ARGS__)                                                                                               \
-    X(Condition, __VA_ARGS__)                                                                                          \
-    // X(FuncCall, __VA_ARGS__)
+    X(Condition, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 

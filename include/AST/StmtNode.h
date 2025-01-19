@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <proxy.h>
-#include <variant>
 
 #define TINY_COBALT_AST_STMT_NODES(X, ...)                                                                             \
     X(If, __VA_ARGS__)                                                                                                 \

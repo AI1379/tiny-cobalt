@@ -27,6 +27,13 @@ struct BinaryNode : public AST::EnableThisPointer<BinaryNode> {
         co_yield left;
         co_yield right;
     }
+    Common::JSON toJSON() const {
+        Common::JSON json;
+        json["type"] = "BinaryNode";
+        json["left"] = left->toJSON();
+        json["right"] = right->toJSON();
+        return json;
+    }
 };
 
 struct UnaryNode : public AST::EnableThisPointer<UnaryNode> {
@@ -37,6 +44,12 @@ struct UnaryNode : public AST::EnableThisPointer<UnaryNode> {
     UnaryNode(C child) : child(child) {}
 
     AST::ASTNodeGen traverse() { co_yield child; }
+    Common::JSON toJSON() const {
+        Common::JSON json;
+        json["type"] = "UnaryNode";
+        json["child"] = child->toJSON();
+        return json;
+    }
 };
 
 struct LeafNode : public AST::EnableThisPointer<LeafNode> {
@@ -44,6 +57,12 @@ struct LeafNode : public AST::EnableThisPointer<LeafNode> {
     LeafNode(const LeafNode &) = default;
 
     AST::ASTNodeGen traverse() { co_return; }
+    Common::JSON toJSON() const {
+        Common::JSON json;
+        json["type"] = "LeafNode";
+        json["name"] = name;
+        return json;
+    }
     std::string name;
     bool visited = false;
 };
