@@ -5,7 +5,8 @@
 - [x] Dumper
 - [x] AST
 - [x] Change the basis of ASTNodes from std::variant to pro::proxy
-- [ ] Lexer and Parser with bison/yacc
+- [x] Lexer and Parser with bison/yacc
+- [ ] Better syntax error report.
 - [ ] Modularize the implementation of Lexer and Parser.
 - [ ] Implement ASTBuilder to build AST.
 

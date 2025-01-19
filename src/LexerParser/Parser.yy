@@ -52,7 +52,7 @@ namespace TinyCobalt::LexerParser {
 %token 
     LPAREN "("
     RPAREN ")"
-    LBRACKET 
+    LBRACKET "["
     RBRACKET "]"
     LBRACE "{"
     RBRACE "}"
@@ -353,6 +353,7 @@ expr:
 | multiary { $$ = $1; }
 | cast { $$ = $1; }
 | condition { $$ = $1; }
+| "(" expr ")" { $$ = $2; }
 
 %left ",";
 %right "=" "+=" "-=" "*=" "/=" "%=" "&=" "|=" "^=" "<<=" ">>=";
@@ -367,9 +368,9 @@ expr:
 %left "+" "-";
 %left "*" "/" "%";
 %right UPLUS UMINUS;
+%right ADDR DEREF;
 %left "++" "--";
 %right PREINC PREDEC;
-%right ADDR DEREF;
 %right "!" "~";
 %left "(" ")" "[" "]" "{" "}";
 %left "." "->";
