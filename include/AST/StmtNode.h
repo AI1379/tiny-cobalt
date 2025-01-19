@@ -21,7 +21,8 @@
     X(FuncDef, __VA_ARGS__)                                                                                            \
     X(StructDef, __VA_ARGS__)                                                                                          \
     X(AliasDef, __VA_ARGS__)                                                                                           \
-    X(ExprStmt, __VA_ARGS__)
+    X(ExprStmt, __VA_ARGS__)                                                                                           \
+    X(EmptyStmt, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 

@@ -44,10 +44,10 @@ namespace TinyCobalt::AST {
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "FuncType";
-            json["returnType"] = returnType->toJSON();
-            json["paramTypes"] = Common::JSON::array();
+            json["return_type"] = returnType->toJSON();
+            json["param_types"] = Common::JSON::array();
             for (const auto &paramType: paramTypes) {
-                json["paramTypes"].push_back(paramType->toJSON());
+                json["param_types"].push_back(paramType->toJSON());
             }
             return json;
         }
@@ -72,10 +72,10 @@ namespace TinyCobalt::AST {
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "ComplexType";
-            json["templateName"] = templateName;
-            json["templateArgs"] = Common::JSON::array();
+            json["template_name"] = templateName;
+            json["template_args"] = Common::JSON::array();
             for (const auto &arg: templateArgs) {
-                json["templateArgs"].push_back(arg->toJSON());
+                json["template_args"].push_back(arg->toJSON());
             }
             return json;
         }
@@ -205,7 +205,7 @@ namespace TinyCobalt::AST {
             Common::JSON json;
             json["type"] = "Cast";
             json["op"] = magic_enum::enum_name(op);
-            json["type"] = type->toJSON();
+            json["cast_type"] = type->toJSON();
             json["operand"] = operand->toJSON();
             return json;
         }
@@ -228,8 +228,8 @@ namespace TinyCobalt::AST {
             Common::JSON json;
             json["type"] = "Condition";
             json["condition"] = condition->toJSON();
-            json["trueBranch"] = trueBranch->toJSON();
-            json["falseBranch"] = falseBranch->toJSON();
+            json["true_branch"] = trueBranch->toJSON();
+            json["false_branch"] = falseBranch->toJSON();
             return json;
         }
     };
@@ -261,8 +261,8 @@ namespace TinyCobalt::AST {
             Common::JSON json;
             json["type"] = "If";
             json["condition"] = condition->toJSON();
-            json["thenStmt"] = thenStmt->toJSON();
-            json["elseStmt"] = elseStmt ? elseStmt->toJSON() : nullptr;
+            json["then_stmt"] = thenStmt->toJSON();
+            json["else_stmt"] = elseStmt ? elseStmt->toJSON() : nullptr;
             return json;
         }
     };
@@ -409,7 +409,7 @@ namespace TinyCobalt::AST {
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "FuncDef";
-            json["returnType"] = returnType->toJSON();
+            json["return_type"] = returnType->toJSON();
             json["name"] = name;
             json["params"] = Common::JSON::array();
             for (const auto &param: params) {
@@ -473,6 +473,16 @@ namespace TinyCobalt::AST {
             Common::JSON json;
             json["type"] = "ExprStmt";
             json["expr"] = expr->toJSON();
+            return json;
+        }
+    };
+
+    struct EmptyStmtNode : public EnableThisPointer<EmptyStmtNode> {
+        ASTNodeGen traverse() { co_return; }
+        void stmtFlag() {}
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "EmptyStmt";
             return json;
         }
     };

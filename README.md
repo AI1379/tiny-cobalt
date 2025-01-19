@@ -8,7 +8,7 @@ We use `xrepo` to manage almost all dependencies, except the `llvm` library. It 
 
 We use C++20 standard, so make sure your compiler support these new features. Features will be tested on gcc-14 and clang-19. MSVC platform has not been tested.
 
-We use Flex and Bison to generate lexer and parser, so please meke sure that you have installed them in your system.
+We use Flex and Bison to generate lexer and parser, so please make sure that you have installed them in your system.
 
 ## Development
 

@@ -196,6 +196,7 @@ return:
 break: "break" ";" { $$ = driver.allocNode<AST::BreakNode>(); }
 continue: "continue" ";" { $$ = driver.allocNode<AST::ContinueNode>(); }
 
+// TODO: maybe variable definition should be an expression
 // TODO: Multiple variable_def in a single line
 variable_def:
   type "identifier" ";" { $$ = driver.allocNode<AST::VariableDefNode>($1, $2, nullptr); }
@@ -239,6 +240,7 @@ stmt:
 | struct_def { $$ = $1; }
 | alias_def { $$ = $1; }
 | expr_stmt { $$ = $1; }
+| ";" { $$ = driver.allocNode<AST::EmptyStmtNode>(); }
 
 stmts:
   stmt { $$ = {$1}; }
