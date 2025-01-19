@@ -23,6 +23,7 @@
 #include "AST/TypeNodeImpl.h"
 #include "AST/TypeNode.h"
 #include "AST/ASTNode.h"
+#include "LexerParser/Location.h"
 
 using namespace TinyCobalt;
 
@@ -37,6 +38,7 @@ namespace TinyCobalt::LexerParser {
 
 %locations
 
+%define api.location.type { TinyCobalt::LexerParser::Location }
 %define parse.trace
 %define parse.error detailed
 

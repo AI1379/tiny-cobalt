@@ -121,7 +121,7 @@ blank   [ \t\r]
 %%
 %{
   // A handy shortcut to the location held by the driver.
-  yy::location& loc = driver.location;
+  auto& loc = driver.location;
   // Code run each time yylex is called.
   loc.step ();
 %}
