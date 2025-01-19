@@ -2,10 +2,9 @@
 // Created by Renatus Madrigal on 01/18/2025
 //
 
-#include <exception>
 #include <gtest/gtest.h>
 #include <sstream>
-
+#include "AST/AST.h"
 #include "Common/JSON.h"
 #include "LexerParser/Parser.h"
 

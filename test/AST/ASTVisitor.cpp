@@ -3,9 +3,7 @@
 //
 
 #include <gtest/gtest.h>
-#include <iostream>
 #include <memory>
-#include <optional>
 #include <proxy.h>
 #include <sstream>
 
