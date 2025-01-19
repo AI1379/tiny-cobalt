@@ -557,3 +557,128 @@ TEST(LexerParser, MultiaryExpr1) {
     )"_json;
     EXPECT_EQ(expected, json);
 }
+
+TEST(LexerParser, ConditionExpr1) {
+    std::string input = R"(a = b ? c : d;)";
+    INIT_TEST;
+    Common::JSON expected = R"(
+    {
+        "children": [
+            {
+                "expr": {
+                    "lhs": {
+                        "name": "a",
+                        "type": "Variable"
+                    },
+                    "op": "Assign",
+                    "rhs": {
+                        "condition": {
+                            "name": "b",
+                            "type": "Variable"
+                        },
+                        "false_branch": {
+                            "name": "d",
+                            "type": "Variable"
+                        },
+                        "true_branch": {
+                            "name": "c",
+                            "type": "Variable"
+                        },
+                        "type": "Condition"
+                    },
+                    "type": "Binary"
+                },
+                "type": "ExprStmt"
+            }
+        ],
+        "type": "ASTRoot"
+    }
+    )"_json;
+    EXPECT_EQ(expected, json);
+}
+
+TEST(LexerParser, CastExpr1) {
+    std::string input = R"(
+        a = static_cast<int>(b);
+        b = reinterpret_cast<int>(c);
+        c = const_cast<int>(d);
+    )";
+    INIT_TEST;
+    Common::JSON expected = R"(
+    {
+        "children": [
+            {
+                "expr": {
+                    "lhs": {
+                        "name": "a",
+                        "type": "Variable"
+                    },
+                    "op": "Assign",
+                    "rhs": {
+                        "operand": {
+                            "name": "b",
+                            "type": "Variable"
+                        },
+                        "op": "Static",
+                        "cast_type": {
+                            "name": "int",
+                            "type": "SimpleType"
+                        },
+                        "type": "Cast"
+                    },
+                    "type": "Binary"
+                },
+                "type": "ExprStmt"
+            },
+            {
+                "expr": {
+                    "lhs": {
+                        "name": "b",
+                        "type": "Variable"
+                    },
+                    "op": "Assign",
+                    "rhs": {
+                        "operand": {
+                            "name": "c",
+                            "type": "Variable"
+                        },
+                        "op": "Reinterpret",
+                        "cast_type": {
+                            "name": "int",
+                            "type": "SimpleType"
+                        },
+                        "type": "Cast"
+                    },
+                    "type": "Binary"
+                },
+                "type": "ExprStmt"
+            },
+            {
+                "expr": {
+                    "lhs": {
+                        "name": "c",
+                        "type": "Variable"
+                    },
+                    "op": "Assign",
+                    "rhs": {
+                        "operand": {
+                            "name": "d",
+                            "type": "Variable"
+                        },
+                        "op": "Const",
+                        "cast_type": {
+                            "name": "int",
+                            "type": "SimpleType"
+                        },
+                        "type": "Cast"
+                    },
+                    "type": "Binary"
+                },
+                "type": "ExprStmt"
+            }
+        ],
+        "type": "ASTRoot"
+    }
+    )"_json;
+    EXPECT_EQ(expected, json);
+}
