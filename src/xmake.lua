@@ -1,7 +1,8 @@
 add_requires(
     "microsoft-proxy 3.1.0",
     "nlohmann_json",
-    "magic_enum"
+    "magic_enum",
+    "range-v3"
 )
 add_requires(
     "cmake::LLVM",
@@ -26,6 +27,7 @@ target("tiny-cobalt-library")
         "nlohmann_json",
         "magic_enum",
         "microsoft-proxy",
+        "range-v3",
         {
             public = true
         }

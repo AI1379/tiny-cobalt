@@ -33,9 +33,15 @@ namespace TinyCobalt::Semantic {
         AST::ASTNodePtr getSymbol(const std::string &name);
 
     private:
+#if __cpp_lib_flat_map >= 202207L
+        using ContainerType = std::flat_map<std::string, AST::ASTNodePtr>;
+#else
+        using ContainerType = std::map<std::string, AST::ASTNodePtr>;
+#endif
+
         Scope *parent_;
         // TODO: implement a flat map to store the symbols.
-        std::map<std::string, AST::ASTNodePtr> symbols_;
+        ContainerType symbols_;
     };
 
 } // namespace TinyCobalt::Semantic
