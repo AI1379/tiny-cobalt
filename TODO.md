@@ -9,7 +9,9 @@
 - [ ] Better syntax error report.
 - [ ] Modularize the implementation of Lexer and Parser.
 - [ ] Implement ASTBuilder to build AST.
+- [ ] Check if declarations of AST nodes should be private.
 
 ## Optimistic
 
-- [ ] Check the performance of `std::variant`, `std::visit` and `std::shared_ptr`
+- [x] Check the performance of `std::variant`, `std::visit` and `std::shared_ptr`.
+- [ ] Implement `flat_map`.
