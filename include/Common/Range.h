@@ -37,6 +37,16 @@ namespace TinyCobalt {
 #endif
         } // namespace views
 
+#if __cpp_lib_containers_ranges >= 202202L
+        using std::from_range;
+        using std::from_range_t;
+#else
+        struct from_range_t {
+            explicit from_range_t() = default;
+        };
+        inline constexpr from_range_t from_range{};
+#endif
+
     } // namespace Ranges
 
     namespace views = Ranges::views;
