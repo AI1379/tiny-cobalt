@@ -28,12 +28,8 @@ namespace TinyCobalt::Common {
 
 #if __cpp_lib_flat_map >= 202207L
     // If the compiler supports std::flat_map, use it.
-
-    template<typename Key, typename T, typename Comp, typename KeyContainer, typename MappedContainer>
-    using flat_map = std::flat_map<Key, T, Comp, KeyContainer, MappedContainer>;
-
-    template<typename Key, typename T, typename Comp, typename KeyContainer, typename MappedContainer>
-    using flat_multimap = std::flat_multimap<Key, T, Comp, KeyContainer, MappedContainer>;
+    using std::flat_map;
+    using std::flat_multimap;
 
 #else
     // Otherwise, use the custom implementation.
@@ -48,18 +44,25 @@ namespace TinyCobalt::Common {
     };
     inline constexpr sorted_equivalent_t sorted_equivalent{};
 
+    // Pre-declaration
+    template<typename, typename, typename, Container, Container>
+    class flat_map;
+
+    template<typename, typename, typename, Container, Container>
+    class flat_multimap;
 
     // TODO: MACRO of [[no_unique_address]] for MSVC
 
     namespace detail {
-
-        template<typename Alloc, typename... Args>
-        concept AllocatorFor = (std::uses_allocator_v<Args, Alloc> && ...);
-
         template<typename InputIter>
         concept HasInputIterCategory =
                 std::is_convertible_v<typename std::iterator_traits<InputIter>::iterator_category,
                                       std::input_iterator_tag>;
+
+        template<std::ranges::input_range _Range>
+        using RangeKeyType = std::remove_const_t<typename std::ranges::range_value_t<_Range>::first_type>;
+        template<std::ranges::input_range _Range>
+        using RangeMappedType = typename std::ranges::range_value_t<_Range>::second_type;
 
         // TODO: figure what this concept is for
         template<typename Func>
@@ -77,6 +80,9 @@ namespace TinyCobalt::Common {
 
             template<bool isConst>
             struct Iterator;
+
+            using Derived = std::conditional_t<IsMulti, flat_multimap<Key, T, Comp, KeyContainer, MappedContainer>,
+                                               flat_map<Key, T, Comp, KeyContainer, MappedContainer>>;
 
         public:
             // STL Container Types
@@ -223,13 +229,13 @@ namespace TinyCobalt::Common {
             }
 
             template<AllocatorFor<key_container_type, mapped_container_type> Alloc>
-            FlatMapImpl(const FlatMapImpl &other, const Alloc &alloc) :
+            FlatMapImpl(const Derived &other, const Alloc &alloc) :
                 cont_{std::make_obj_using_allocator<key_container_type>(alloc, other.cont_.keys),
                       std::make_obj_using_allocator<mapped_container_type>(alloc, other.cont_.values)},
                 comp_(other.comp_) {}
 
             template<AllocatorFor<key_container_type, mapped_container_type> Alloc>
-            FlatMapImpl(FlatMapImpl &&other, const Alloc &alloc) :
+            FlatMapImpl(Derived &&other, const Alloc &alloc) :
                 cont_{std::make_obj_using_allocator<key_container_type>(alloc, std::move(other.cont_.keys)),
                       std::make_obj_using_allocator<mapped_container_type>(alloc, std::move(other.cont_.values))},
                 comp_(other.comp_) {}
@@ -297,10 +303,10 @@ namespace TinyCobalt::Common {
                         const key_compare &comp, // NOLINT
                         const Alloc &alloc) : FlatMapImpl(s, il.begin(), il.end(), comp, alloc) {}
 
-            FlatMapImpl &operator=(std::initializer_list<value_type> il) {
-                clear();
-                insert(il);
-                return *this;
+            auto &operator=(this auto &self, std::initializer_list<value_type> il) {
+                self.clear();
+                self.insert(il);
+                return self;
             }
 
             // Iterators
@@ -347,7 +353,7 @@ namespace TinyCobalt::Common {
                 requires((!IsMulti) &&
                          (std::same_as<std::remove_cvref_t<Key2>, key_type> || TransparentComparator<Comp>) )
             mapped_type &operator[](Key2 &&x) {
-                return tryEmplace(std::forward<Key2>(x)).first->second;
+                return try_emplace(std::forward<Key2>(x)).first->second;
             }
 
             mapped_type &at(const key_type &x)
@@ -424,16 +430,16 @@ namespace TinyCobalt::Common {
                 }
 
                 if constexpr (!IsMulti) {
-                    if (key_it != cont_.keys.end() && !comp_(key, *key_it)) {
+                    if (key_it != cont_.keys.end() && !comp_(key, key_it[0])) {
                         return {iterator{this, key_it}, false};
                     }
                 }
                 auto guard = makeClearGuard();
-                key_it = cont_.keys.insert(key_it, std::forward<Key2>(key));
-                value_it = cont_.values.begin() + std::distance(cont_.keys.begin(), key_it);
+                key_it = cont_.keys.insert(key_it, std::move(key));
+                value_it = cont_.values.begin() + (key_it - cont_.keys.begin());
                 cont_.values.emplace(value_it, std::forward<Args>(args)...);
                 guard.disable();
-                return {iterator{this, value_it}, true};
+                return {iterator{this, key_it}, true};
             }
 
         public:
@@ -579,7 +585,7 @@ namespace TinyCobalt::Common {
                         std::is_constructible_v<key_type, Key2> && std::is_assignable_v<mapped_type &, Mapped> &&
                         std::is_constructible_v<mapped_type, Mapped>
             std::pair<iterator, bool> insert_or_assign(Key2 &&k, Mapped &&obj) {
-                auto r = tryEmplace(std::forward<Key2>(k), std::forward<Mapped>(obj));
+                auto r = tryEmplace(std::nullopt, std::forward<Key2>(k), std::forward<Mapped>(obj));
                 if (!r.second) {
                     r.first->second = std::forward<Mapped>(obj);
                 }
@@ -646,7 +652,7 @@ namespace TinyCobalt::Common {
                 return iterator{this, it};
             }
 
-            void swap(FlatMapImpl &other) noexcept {
+            void swap(Derived &other) noexcept {
                 std::ranges::swap(comp_, other.comp_);
                 std::ranges::swap(cont_.keys, other.cont_.keys);
                 std::ranges::swap(cont_.values, other.cont_.values);
@@ -762,19 +768,20 @@ namespace TinyCobalt::Common {
             }
 
             // Comparator
-            [[nodiscard]] friend bool operator==(const FlatMapImpl &x, const FlatMapImpl &y) {
+            [[nodiscard]] friend bool operator==(const Derived &x, const Derived &y) {
                 return std::equal(x.begin(), x.end(), y.begin(), y.end());
             }
 
             template<typename Up = value_type>
-            [[nodiscard]] friend Synth3way<Up> operator<=>(const FlatMapImpl &x, const FlatMapImpl &y) {
-                return std::lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end());
+            [[nodiscard]] friend Synth3way<Up> operator<=>(const Derived &x, const Derived &y) {
+                return std::lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(),
+                                                              TinyCobalt::detail::kSynth3wayImpl);
             }
 
-            friend void swap(FlatMapImpl &x, FlatMapImpl &y) noexcept { x.swap(y); }
+            friend void swap(Derived &x, Derived &y) noexcept { x.swap(y); }
 
             template<typename Predicate>
-            friend size_type erase_if(FlatMapImpl &c, Predicate pred) {
+            friend size_type erase_if(Derived &c, Predicate pred) {
                 auto guard = c.makeClearGuard();
                 auto zv = Ranges::views::zip(c.cont_.keys, c.cont_.values);
                 auto sr = std::ranges::remove_if(zv, pred);
@@ -805,7 +812,7 @@ namespace TinyCobalt::Common {
 
             void sortUnique_() {
                 auto zv = Ranges::views::zip(cont_.keys, cont_.values);
-                std::ranges::sort(zv, value_compare(comp_));
+                std::ranges::sort(zv, value_comp());
                 if constexpr (!IsMulti) {
                     unique_();
                 }
@@ -820,16 +827,13 @@ namespace TinyCobalt::Common {
                  bool IsMulti>
         template<bool IsConst>
         class FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, IsMulti>::Iterator {
-            using BaseIter =
-                    std::conditional_t<IsConst, typename KeyContainer::const_iterator, typename KeyContainer::iterator>;
             using size_type = typename FlatMapImpl::size_type;
 
         public:
             using iterator_category = std::input_iterator_tag;
             using iterator_concept = std::random_access_iterator_tag;
             using value_type = std::pair<const key_type, mapped_type>;
-            using reference =
-                    std::pair<const key_type &, std::conditional_t<IsConst, const mapped_type &, mapped_type &>>;
+            using reference = std::pair<const key_type &, ConditionalConst<IsConst, mapped_type> &>;
             using difference_type = std::ptrdiff_t;
 
             Iterator() = default;
@@ -839,8 +843,8 @@ namespace TinyCobalt::Common {
                 : cont_(it.cont_), index_(it.index_) {}
 
             reference operator*() const noexcept {
-                assert(index_ < cont_->keys().size());
-                return {cont_->keys()[index_], cont_->values()[index_]};
+                assert(index_ < cont_->keys.size());
+                return {cont_->keys[index_], cont_->values[index_]};
             }
 
             struct pointer {
@@ -917,7 +921,7 @@ namespace TinyCobalt::Common {
             }
 
             friend bool operator==(const Iterator &lhs, const Iterator &rhs) noexcept {
-                assert(expr(lhs.cont_ == rhs.cont_));
+                assert(lhs.cont_ == rhs.cont_);
                 // Both iterators are end iterators.
                 assert((lhs.index_ == size_t(-1)) == (rhs.index_ == size_t(-1)));
                 return lhs.index_ == rhs.index_;
@@ -929,7 +933,7 @@ namespace TinyCobalt::Common {
                 return lhs.index_ <=> rhs.index_;
             }
 
-            [[no_unique_address]] FlatMapImpl *cont_ = nullptr;
+            [[no_unique_address]] ConditionalConst<IsConst, containers> *cont_ = nullptr;
             size_type index_ = -1;
         };
     } // namespace detail
@@ -941,9 +945,165 @@ namespace TinyCobalt::Common {
     template<typename Key, // NOLINT
              typename T, // NOLINT
              typename Comp = std::less<Key>, // NOLINT
-             typename KeyContainer = std::vector<Key>, // NOLINT
-             typename MappedContainer = std::vector<T>>
-    using flat_map = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false>;
+             Container KeyContainer = std::vector<Key>, // NOLINT
+             Container MappedContainer = std::vector<T>>
+    class flat_map : public detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false> {
+        using _Impl = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false>;
+        friend _Impl;
+
+    public:
+        // FIXME: figure out why operator= cannot be exposed in the derived class even if with CRTP.
+
+        // types
+        using typename _Impl::const_iterator;
+        using typename _Impl::const_reference;
+        using typename _Impl::const_reverse_iterator;
+        using typename _Impl::containers;
+        using typename _Impl::difference_type;
+        using typename _Impl::iterator;
+        using typename _Impl::key_compare;
+        using typename _Impl::key_container_type;
+        using typename _Impl::key_type;
+        using typename _Impl::mapped_container_type;
+        using typename _Impl::mapped_type;
+        using typename _Impl::reference;
+        using typename _Impl::reverse_iterator;
+        using typename _Impl::size_type;
+        using typename _Impl::value_compare;
+        using typename _Impl::value_type;
+
+        // constructors
+        using _Impl::_Impl;
+
+        // iterators
+        using _Impl::begin;
+        using _Impl::end;
+        using _Impl::rbegin;
+        using _Impl::rend;
+
+        using _Impl::cbegin;
+        using _Impl::cend;
+        using _Impl::crbegin;
+        using _Impl::crend;
+
+        // capacity
+        using _Impl::empty;
+        using _Impl::max_size;
+        using _Impl::size;
+
+        // element access
+        using _Impl::at;
+        using _Impl::operator[];
+
+        // modifiers
+        using _Impl::emplace;
+        using _Impl::emplace_hint;
+        using _Impl::insert;
+        // using _Impl::insert_range;
+        using _Impl::clear;
+        using _Impl::erase;
+        using _Impl::extract;
+        using _Impl::replace;
+        using _Impl::swap;
+
+        using _Impl::insert_or_assign;
+        using _Impl::try_emplace;
+
+        // observers
+        using _Impl::key_comp;
+        using _Impl::keys;
+        using _Impl::value_comp;
+        using _Impl::values;
+
+        // map operations
+        using _Impl::contains;
+        using _Impl::count;
+        using _Impl::equal_range;
+        using _Impl::find;
+        using _Impl::lower_bound;
+        using _Impl::upper_bound;
+    };
+
+    // Deduction guides
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp = std::less<typename KeyContainer::value_type>>
+    flat_map(KeyContainer, MappedContainer, Comp = Comp()) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, typename MappedContainer, AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_map(KeyContainer, MappedContainer, Alloc) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       std::less<typename KeyContainer::value_type>, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp, // NOLINT
+             AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_map(KeyContainer, MappedContainer, Comp, Alloc) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp = std::less<typename KeyContainer::value_type>>
+    flat_map(sorted_unique_t, KeyContainer, MappedContainer, Comp = Comp()) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, typename MappedContainer, AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_map(sorted_unique_t, KeyContainer, MappedContainer, Alloc) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       std::less<typename KeyContainer::value_type>, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp, // NOLINT
+             AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_map(sorted_unique_t, KeyContainer, MappedContainer, Comp, Alloc) // NOLINT
+            ->flat_map<typename KeyContainer::value_type, // NOLINT
+                       typename MappedContainer::value_type, // NOLINT
+                       Comp, KeyContainer, MappedContainer>;
+
+    template<detail::HasInputIterCategory _InputIterator,
+             NotAllocatorLike Comp = std::less<IteratorKeyType<_InputIterator>>>
+    flat_map(_InputIterator, _InputIterator, Comp = Comp())
+            -> flat_map<IteratorKeyType<_InputIterator>, IteratorValueType<_InputIterator>, Comp>;
+
+    template<detail::HasInputIterCategory _InputIterator,
+             NotAllocatorLike Comp = std::less<IteratorKeyType<_InputIterator>>>
+    flat_map(sorted_unique_t, _InputIterator, _InputIterator, Comp = Comp())
+            -> flat_map<IteratorKeyType<_InputIterator>, IteratorValueType<_InputIterator>, Comp>;
+
+    template<std::ranges::input_range _Rg, // NOLINT
+             NotAllocatorLike Comp = std::less<detail::RangeKeyType<_Rg>>, // NOLINT
+             AllocatorLike Alloc = std::allocator<std::byte>>
+    flat_map(ranges::from_range_t, _Rg &&, Comp = Comp(), Alloc = Alloc()) // NOLINT
+            ->flat_map<detail::RangeKeyType<_Rg>, // NOLINT
+                       detail::RangeMappedType<_Rg>, // NOLINT
+                       Comp, // NOLINT
+                       std::vector<detail::RangeKeyType<_Rg>, AllocRebind<Alloc, detail::RangeKeyType<_Rg>>>,
+                       std::vector<detail::RangeMappedType<_Rg>, AllocRebind<Alloc, detail::RangeMappedType<_Rg>>>>;
+
+    template<std::ranges::input_range _Rg, AllocatorLike Alloc>
+    flat_map(ranges::from_range_t, _Rg &&, Alloc) // NOLINT
+            ->flat_map<detail::RangeKeyType<_Rg>, // NOLINT
+                       detail::RangeMappedType<_Rg>, // NOLINT
+                       std::less<detail::RangeKeyType<_Rg>>, // NOLINT
+                       std::vector<detail::RangeKeyType<_Rg>, AllocRebind<Alloc, detail::RangeKeyType<_Rg>>>,
+                       std::vector<detail::RangeMappedType<_Rg>, AllocRebind<Alloc, detail::RangeMappedType<_Rg>>>>;
+
+    template<typename Key, typename _Tp, NotAllocatorLike Comp = std::less<Key>>
+    flat_map(std::initializer_list<std::pair<Key, _Tp>>, Comp = Comp()) -> flat_map<Key, _Tp, Comp>;
+
+    template<typename Key, typename _Tp, NotAllocatorLike Comp = std::less<Key>>
+    flat_map(sorted_unique_t, std::initializer_list<std::pair<Key, _Tp>>, Comp = Comp()) -> flat_map<Key, _Tp, Comp>;
 
     /**
      * An implementation of flat_multimap introduced in C++23 standard.
@@ -951,9 +1111,98 @@ namespace TinyCobalt::Common {
     template<typename Key, // NOLINT
              typename T, // NOLINT
              typename Comp = std::less<Key>, // NOLINT
-             typename KeyContainer = std::vector<Key>, // NOLINT
-             typename MappedContainer = std::vector<T>>
-    using flat_multimap = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, true>;
+             Container KeyContainer = std::vector<Key>, // NOLINT
+             Container MappedContainer = std::vector<T>>
+    class flat_multimap : detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, true> {};
+
+
+    // Deduction guides
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp = std::less<typename KeyContainer::value_type>>
+    flat_multimap(KeyContainer, MappedContainer, Comp = Comp()) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_multimap(KeyContainer, MappedContainer, Alloc) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            std::less<typename KeyContainer::value_type>, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp, // NOLINT
+             AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_multimap(KeyContainer, MappedContainer, Comp, Alloc) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp = std::less<typename KeyContainer::value_type>>
+    flat_multimap(sorted_equivalent_t, KeyContainer, MappedContainer, Comp = Comp()) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            Comp, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, typename MappedContainer, AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_multimap(sorted_equivalent_t, KeyContainer, MappedContainer, Alloc) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            std::less<typename KeyContainer::value_type>, KeyContainer, MappedContainer>;
+
+    template<typename KeyContainer, // NOLINT
+             typename MappedContainer, // NOLINT
+             NotAllocatorLike Comp, // NOLINT
+             AllocatorFor<KeyContainer, MappedContainer> Alloc>
+    flat_multimap(sorted_equivalent_t, KeyContainer, MappedContainer, Comp, Alloc) // NOLINT
+            ->flat_multimap<typename KeyContainer::value_type, // NOLINT
+                            typename MappedContainer::value_type, // NOLINT
+                            Comp, KeyContainer, MappedContainer>;
+
+    template<detail::HasInputIterCategory _InputIterator,
+             NotAllocatorLike Comp = std::less<IteratorKeyType<_InputIterator>>>
+    flat_multimap(_InputIterator, _InputIterator, Comp = Comp())
+            -> flat_multimap<IteratorKeyType<_InputIterator>, IteratorValueType<_InputIterator>, Comp>;
+
+    template<detail::HasInputIterCategory _InputIterator,
+             NotAllocatorLike Comp = std::less<IteratorKeyType<_InputIterator>>>
+    flat_multimap(sorted_equivalent_t, _InputIterator, _InputIterator, Comp = Comp())
+            -> flat_multimap<IteratorKeyType<_InputIterator>, IteratorValueType<_InputIterator>, Comp>;
+
+    template<std::ranges::input_range _Rg, // NOLINT
+             NotAllocatorLike Comp = std::less<detail::RangeKeyType<_Rg>>, // NOLINT
+             AllocatorLike Alloc = std::allocator<std::byte>>
+    flat_multimap(ranges::from_range_t, _Rg &&, Comp = Comp(), Alloc = Alloc()) // NOLINT
+            ->flat_multimap<
+                    detail::RangeKeyType<_Rg>, // NOLINT
+                    detail::RangeMappedType<_Rg>, // NOLINT
+                    Comp, // NOLINT
+                    std::vector<detail::RangeKeyType<_Rg>, AllocRebind<Alloc, detail::RangeKeyType<_Rg>>>,
+                    std::vector<detail::RangeMappedType<_Rg>, AllocRebind<Alloc, detail::RangeMappedType<_Rg>>>>;
+
+    template<std::ranges::input_range _Rg, AllocatorLike Alloc>
+    flat_multimap(ranges::from_range_t, _Rg &&, Alloc) // NOLINT
+            ->flat_multimap<
+                    detail::RangeKeyType<_Rg>, // NOLINT
+                    detail::RangeMappedType<_Rg>, // NOLINT
+                    std::less<detail::RangeKeyType<_Rg>>, // NOLINT
+                    std::vector<detail::RangeKeyType<_Rg>, AllocRebind<Alloc, detail::RangeKeyType<_Rg>>>,
+                    std::vector<detail::RangeMappedType<_Rg>, AllocRebind<Alloc, detail::RangeMappedType<_Rg>>>>;
+
+    template<typename Key, typename _Tp, NotAllocatorLike Comp = std::less<Key>>
+    flat_multimap(std::initializer_list<std::pair<Key, _Tp>>, Comp = Comp()) -> flat_multimap<Key, _Tp, Comp>;
+
+    template<typename Key, typename _Tp, NotAllocatorLike Comp = std::less<Key>>
+    flat_multimap(sorted_equivalent_t, std::initializer_list<std::pair<Key, _Tp>>, Comp = Comp())
+            -> flat_multimap<Key, _Tp, Comp>;
+
+
 #endif
 
 } // namespace TinyCobalt::Common

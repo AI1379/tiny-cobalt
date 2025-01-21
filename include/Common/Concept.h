@@ -5,8 +5,11 @@
 #ifndef TINY_COBALT_INCLUDE_COMMON_CONCEPT_H_
 #define TINY_COBALT_INCLUDE_COMMON_CONCEPT_H_
 
+#include <cassert>
 #include <compare>
 #include <concepts>
+#include <memory>
+#include <utility>
 
 namespace TinyCobalt {
 
@@ -53,7 +56,31 @@ namespace TinyCobalt {
     } // namespace detail
 
     template<typename T, typename U = T>
-    using Synth3way = decltype(kSynth3wayImpl(std::declval<T &>(), std::declval<U &>()));
+    using Synth3way = decltype(detail::kSynth3wayImpl(std::declval<T &>(), std::declval<U &>()));
+
+    template<typename Alloc>
+    concept AllocatorLike = requires(Alloc &alloc) {
+        typename Alloc::value_type;
+        alloc.deallocate(alloc.allocate(1u), 1u);
+    };
+
+    template<typename Alloc>
+    concept NotAllocatorLike = !AllocatorLike<Alloc>;
+
+    template<typename Alloc, typename... Args>
+    concept AllocatorFor = (std::uses_allocator_v<Args, Alloc> && ...);
+
+    template<typename Alloc, typename T>
+    using AllocRebind = std::allocator_traits<Alloc>::template rebind_alloc<T>;
+
+    template<typename InputIter>
+    using IteratorKeyType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::first_type>;
+
+    template<typename InputIter>
+    using IteratorValueType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::second_type>;
+
+    template<bool IsConst, typename T>
+    using ConditionalConst = std::conditional_t<IsConst, const T, T>;
 
     template<typename C>
     concept Container = requires(C cont) {
