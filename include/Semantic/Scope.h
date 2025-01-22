@@ -5,43 +5,94 @@
 #ifndef TINY_COBALT_INCLUDE_SEMANTIC_SCOPE_H_
 #define TINY_COBALT_INCLUDE_SEMANTIC_SCOPE_H_
 
-#include <map>
+#include <format>
+#include <optional>
 #include <string>
 #include "AST/AST.h"
-#include "AST/ASTNode.h"
+#include "Common/FlatMap.h"
 
 namespace TinyCobalt::Semantic {
     /**
      * A class to represent a scope in the program.
      */
+    template<typename Key, typename Value>
     class Scope {
     public:
-        Scope(Scope *parent) : parent_(parent) {}
+        Scope(Scope *parent = nullptr, const std::string &name = "<anonymous>") : parent_(parent), name_(name) {}
 
         /**
          * Add a symbol to the scope.
          * @param name The name of the symbol.
          * @param node The AST node representing the symbol.
          */
-        void addSymbol(const std::string &name, AST::ASTNodePtr node);
+        void addSymbol(const Key &key, const Value &value) {
+            if (symbols_.contains(key)) {
+                throw std::runtime_error(std::format("Symbol already exists in scope \"{}\"", name_));
+            }
+            symbols_[key] = value;
+        }
 
         /**
          * Get the symbol with the given name.
          * @param name The name of the symbol.
          * @return The AST node representing the symbol.
          */
-        AST::ASTNodePtr getSymbol(const std::string &name);
+        std::optional<Value> getSymbol(const Key &name) {
+            auto current = this;
+            while (current) {
+                if (current->symbols_.contains(name)) {
+                    return current->symbols_[name];
+                }
+                current = current->parent_;
+            }
+            return std::nullopt;
+        }
+
+        /**
+         * Get the symbol with the given name in the current scope.
+         */
+        std::optional<Value> getLocalSymbol(const Key &name) {
+            if (symbols_.contains(name)) {
+                return symbols_[name];
+            }
+            return std::nullopt;
+        }
+
+        /**
+         * Get the symbol with a pointer to its scope.
+         */
+        std::optional<std::pair<Value, Scope *>> getSymbolWithScope(const Key &name) {
+            auto current = this;
+            while (current) {
+                if (current->symbols_.contains(name)) {
+                    return std::make_pair(current->symbols_[name], current);
+                }
+                current = current->parent_;
+            }
+            return std::nullopt;
+        }
+
+        /**
+         * Get the name of the scope.
+         */
+        const std::string &getName() const { return name_; }
+
+        /**
+         * Get the full name of the scope.
+         */
+        std::string getFullName() const {
+            if (parent_) {
+                return std::format("{}::{}", parent_->getFullName(), name_);
+            }
+            return name_;
+        }
+
+        using ContainerType = Common::flat_map<Key, Value>;
 
     private:
-#if __cpp_lib_flat_map >= 202207L
-        using ContainerType = std::flat_map<std::string, AST::ASTNodePtr>;
-#else
-        using ContainerType = std::map<std::string, AST::ASTNodePtr>;
-#endif
-
         Scope *parent_;
-        // TODO: implement a flat map to store the symbols.
         ContainerType symbols_;
+        std::string name_;
     };
 
 } // namespace TinyCobalt::Semantic
