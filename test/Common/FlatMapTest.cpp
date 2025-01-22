@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <deque>
 #include <functional>
 #include <gtest/gtest.h>
 #include <ranges>
@@ -101,6 +102,39 @@ TEST(FlatMap, InsertTest4) {
 
 TEST(FlatMap, EraseTest1) {
     flat_map<int, int> map;
+    map = {std::pair(1, 2), {3, 4}, {5, 6}};
+    map.insert({std::pair(7, 8), {9, 10}});
+
+    auto it = map.find(0);
+    EXPECT_TRUE(it == map.end());
+    it = map.find(9);
+    EXPECT_TRUE(it->second == 10);
+
+    const auto map2 = map;
+    EXPECT_TRUE(map == map);
+    EXPECT_TRUE(map == map2);
+
+    map.erase(map.begin());
+    map.erase(5);
+    map.erase(map.end() - 2, map.end());
+    EXPECT_TRUE(std::ranges::equal(map, (std::pair<int, int>[]) {{3, 4}}, [](auto lhs, auto rhs) {
+        return lhs.first == rhs.first && lhs.second == rhs.second;
+    }));
+    EXPECT_TRUE(map != map2);
+    EXPECT_TRUE(map2 < map);
+
+    map = map2;
+    erase_if(map, [](const auto &x) {
+        auto [k, v] = x;
+        return k < 5 || k > 5;
+    });
+    EXPECT_TRUE(std::ranges::equal(map, (std::pair<int, int>[]) {{5, 6}}, [](auto lhs, auto rhs) {
+        return lhs.first == rhs.first && lhs.second == rhs.second;
+    }));
+}
+
+TEST(FlatMap, ContainerTest1) {
+    flat_map<int, int, std::less<int>, std::deque<int>, std::deque<int>> map;
     map = {std::pair(1, 2), {3, 4}, {5, 6}};
     map.insert({std::pair(7, 8), {9, 10}});
 

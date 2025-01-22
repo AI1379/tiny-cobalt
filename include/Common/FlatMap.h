@@ -637,8 +637,8 @@ namespace TinyCobalt::Common {
                 requires std::same_as<std::remove_cvref_t<Key2>, Key> ||
                          (TransparentComparator<Comp> && !std::is_convertible_v<Key2, iterator> &&
                           !std::is_convertible_v<Key2, const_iterator>)
-            size_type erase(Key &&x) {
-                auto [first, last] = std::equal_range(std::forward<Key2>(x));
+            size_type erase(Key2 &&x) {
+                auto [first, last] = this->equal_range(std::forward<Key2>(x));
                 auto n = last - first;
                 erase(first, last);
                 return n;
@@ -660,7 +660,7 @@ namespace TinyCobalt::Common {
 
             void clear() noexcept {
                 cont_.keys.clear();
-                cont_.keys.clear();
+                cont_.values.clear();
             }
 
             // Map operations
@@ -756,15 +756,15 @@ namespace TinyCobalt::Common {
             template<typename Key2>
                 requires std::same_as<Key2, Key> || TransparentComparator<Comp>
             [[nodiscard]] std::pair<iterator, iterator> equal_range(const Key2 &x) {
-                auto [first, last] = std::equal_range(x);
-                return {first, last};
+                auto [first, last] = std::equal_range(cont_.keys.begin(), cont_.keys.end(), x, comp_);
+                return {{this, first}, {this, last}};
             }
 
             template<typename Key2>
                 requires std::same_as<Key2, Key> || TransparentComparator<Comp>
             [[nodiscard]] std::pair<const_iterator, const_iterator> equal_range(const Key2 &x) const {
-                auto [first, last] = std::equal_range(x);
-                return {first, last};
+                auto [first, last] = std::equal_range(cont_.keys.begin(), cont_.keys.end(), x, comp_);
+                return {{this, first}, {this, last}};
             }
 
             // Comparator

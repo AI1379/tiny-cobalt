@@ -33,6 +33,7 @@ namespace TinyCobalt {
 #if __cpp_lib_ranges_zip >= 202110L
             using std::views::zip;
 #else
+            // FIXME: ranges::views::zip in range-v3 is not exactly the same as std::views::zip
             using ranges::views::zip;
 #endif
         } // namespace views
