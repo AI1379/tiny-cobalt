@@ -5,13 +5,13 @@
 #ifndef TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
+#include <proxy.h>
 #include <string>
 #include <type_traits>
 #include <variant>
+#include "Common/Concept.h"
 
-#include <proxy.h>
-
-namespace TinyCobalt::Utility {
+namespace TinyCobalt {
     template<typename T>
     struct is_variant : std::false_type {};
     template<typename... Ts>
@@ -78,7 +78,63 @@ namespace TinyCobalt::Utility {
     inline constexpr bool IsVariantMember = false;
     template<typename T, typename... VTs>
     inline constexpr bool IsVariantMember<T, std::variant<VTs...>> = (std::is_same_v<T, VTs> || ...);
-    
-} // namespace TinyCobalt::Utility
+
+    template<typename Alloc, typename T>
+    using AllocRebind = std::allocator_traits<Alloc>::template rebind_alloc<T>;
+
+    template<typename InputIter>
+    using IteratorKeyType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::first_type>;
+
+    template<typename InputIter>
+    using IteratorValueType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::second_type>;
+
+    template<bool IsConst, typename T>
+    using ConditionalConst = std::conditional_t<IsConst, const T, T>;
+
+    namespace detail {
+        template<typename T>
+        concept BooleanTestableImpl = std::convertible_to<T, bool>;
+
+        template<typename T>
+        concept BooleanTestable = BooleanTestableImpl<T> && requires(T &&t) {
+            { !static_cast<T &&>(t) } -> BooleanTestableImpl;
+        };
+    } // namespace detail
+
+    inline constexpr struct {
+        template<typename T, typename U>
+        static constexpr bool noexceptTest(const T *t = nullptr, const U *u = nullptr) {
+            if constexpr (std::three_way_comparable_with<T, U>) {
+                return noexcept(*t <=> *u);
+            } else {
+                return noexcept(*t < *u) && noexcept(*u < *t);
+            }
+        }
+
+        template<typename T, typename U>
+        [[nodiscard]] constexpr auto operator()(const T &t, const U &u) const noexcept(noexceptTest<T, U>())
+            requires requires {
+                { t < u } -> detail::BooleanTestable;
+                { u < t } -> detail::BooleanTestable;
+            }
+        {
+            if constexpr (std::three_way_comparable_with<T, U>) {
+                return t <=> u;
+            } else {
+                if (t < u) {
+                    return std::weak_ordering::less;
+                } else if (u < t) {
+                    return std::weak_ordering::greater;
+                } else {
+                    return std::weak_ordering::equivalent;
+                }
+            }
+        }
+    } kSynth3wayComparator = {};
+
+    template<typename T, typename U = T>
+    using Synth3way = decltype(kSynth3wayComparator(std::declval<T &>(), std::declval<U &>()));
+
+} // namespace TinyCobalt
 
 #endif // TINY_COBALT_INCLUDE_COMMON_UTILITY_H_

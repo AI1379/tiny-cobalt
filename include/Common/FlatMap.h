@@ -19,6 +19,7 @@
 #include <vector>
 #include "Common/Concept.h"
 #include "Common/Range.h"
+#include "Common/Utility.h"
 
 #if __cpp_lib_flat_map >= 202207L
 #include <flat_map>
@@ -342,7 +343,9 @@ namespace TinyCobalt::Common {
             mapped_type &operator[](const key_type &x)
                 requires(!IsMulti)
             {
-                return operator[]<const key_type>(x);
+                // FIXME: Connot instantiate the template function sometimes but not sure why.
+                // return operator[]<const key_type>(x);
+                return try_emplace(x).first->second;
             }
             mapped_type &operator[](key_type &&x)
                 requires(!IsMulti)
@@ -775,7 +778,7 @@ namespace TinyCobalt::Common {
             template<typename Up = value_type>
             [[nodiscard]] friend Synth3way<Up> operator<=>(const Derived &x, const Derived &y) {
                 return std::lexicographical_compare_three_way(x.begin(), x.end(), y.begin(), y.end(),
-                                                              TinyCobalt::detail::kSynth3wayImpl);
+                                                              kSynth3wayComparator);
             }
 
             friend void swap(Derived &x, Derived &y) noexcept { x.swap(y); }
@@ -952,8 +955,6 @@ namespace TinyCobalt::Common {
         friend Base;
 
     public:
-        // FIXME: figure out why operator= cannot be exposed in the derived class even if with CRTP.
-
         // types
         using typename Base::const_iterator;
         using typename Base::const_reference;
@@ -1118,8 +1119,6 @@ namespace TinyCobalt::Common {
         friend Base;
 
     public:
-        // FIXME: figure out why operator= cannot be exposed in the derived class even if with CRTP.
-
         // types
         using typename Base::const_iterator;
         using typename Base::const_reference;
@@ -1278,7 +1277,7 @@ namespace TinyCobalt::Common {
             -> flat_multimap<Key, _Tp, Comp>;
 
 
-#endif
+#endif // __cpp_lib_flat_map
 
 } // namespace TinyCobalt::Common
 

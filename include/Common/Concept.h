@@ -13,51 +13,6 @@
 
 namespace TinyCobalt {
 
-    namespace detail {
-        template<typename T>
-        concept BooleanTestableImpl = std::convertible_to<T, bool>;
-
-        template<typename T>
-        concept BooleanTestable = BooleanTestableImpl<T> && requires(T &&t) {
-            { !static_cast<T &&>(t) } -> BooleanTestableImpl;
-        };
-
-        inline constexpr struct Synth3wayImpl {
-            template<typename T, typename U>
-            static constexpr bool noexceptTest(const T *t = nullptr, const U *u = nullptr) {
-                if constexpr (std::three_way_comparable_with<T, U>) {
-                    return noexcept(*t <=> *u);
-                } else {
-                    return noexcept(*t < *u) && noexcept(*u < *t);
-                }
-            }
-
-            template<typename T, typename U>
-            [[nodiscard]] constexpr auto operator()(const T &t, const U &u) const noexcept(noexceptTest<T, U>())
-                requires requires {
-                    { t < u } -> BooleanTestable;
-                    { u < t } -> BooleanTestable;
-                }
-            {
-                if constexpr (std::three_way_comparable_with<T, U>) {
-                    return t <=> u;
-                } else {
-                    if (t < u) {
-                        return std::weak_ordering::less;
-                    } else if (u < t) {
-                        return std::weak_ordering::greater;
-                    } else {
-                        return std::weak_ordering::equivalent;
-                    }
-                }
-            }
-        } kSynth3wayImpl = {};
-
-    } // namespace detail
-
-    template<typename T, typename U = T>
-    using Synth3way = decltype(detail::kSynth3wayImpl(std::declval<T &>(), std::declval<U &>()));
-
     template<typename Alloc>
     concept AllocatorLike = requires(Alloc &alloc) {
         typename Alloc::value_type;
@@ -69,18 +24,6 @@ namespace TinyCobalt {
 
     template<typename Alloc, typename... Args>
     concept AllocatorFor = (std::uses_allocator_v<Args, Alloc> && ...);
-
-    template<typename Alloc, typename T>
-    using AllocRebind = std::allocator_traits<Alloc>::template rebind_alloc<T>;
-
-    template<typename InputIter>
-    using IteratorKeyType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::first_type>;
-
-    template<typename InputIter>
-    using IteratorValueType = std::remove_const_t<typename std::iterator_traits<InputIter>::value_type::second_type>;
-
-    template<bool IsConst, typename T>
-    using ConditionalConst = std::conditional_t<IsConst, const T, T>;
 
     template<typename C>
     concept Container = requires(C cont) {
