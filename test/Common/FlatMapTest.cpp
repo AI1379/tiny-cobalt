@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 #include <ranges>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include "Common/FlatMap.h"
 
@@ -98,6 +99,22 @@ TEST(FlatMap, InsertTest4) {
     EXPECT_TRUE(std::ranges::equal(map.values(), (int[]) {-3, -2, -1, 2}));
     EXPECT_TRUE(map.contains(3) && !map.contains(7));
     EXPECT_TRUE(map.count(3) == 1);
+}
+
+TEST(FlatMap, InsertTest5) {
+    flat_map<std::string, std::string> map;
+    map.insert({"a", "b"});
+    map.insert({"c", "d"});
+    map.insert({"e", "f"});
+    map.insert({"a", "g"});
+    map.insert({"c", "h"});
+    std::string s = "c";
+    EXPECT_EQ(map.size(), 3);
+    EXPECT_TRUE(std::ranges::equal(map.keys(), (std::string[]) {"a", "c", "e"}));
+    EXPECT_TRUE(std::ranges::equal(map.values(), (std::string[]) {"b", "d", "f"}));
+    EXPECT_EQ(map.at(s), "d");
+    s = "i";
+    EXPECT_EQ(map[s], "");
 }
 
 TEST(FlatMap, EraseTest1) {
