@@ -948,80 +948,80 @@ namespace TinyCobalt::Common {
              Container KeyContainer = std::vector<Key>, // NOLINT
              Container MappedContainer = std::vector<T>>
     class flat_map : public detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false> {
-        using _Impl = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false>;
-        friend _Impl;
+        using Base = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, false>;
+        friend Base;
 
     public:
         // FIXME: figure out why operator= cannot be exposed in the derived class even if with CRTP.
 
         // types
-        using typename _Impl::const_iterator;
-        using typename _Impl::const_reference;
-        using typename _Impl::const_reverse_iterator;
-        using typename _Impl::containers;
-        using typename _Impl::difference_type;
-        using typename _Impl::iterator;
-        using typename _Impl::key_compare;
-        using typename _Impl::key_container_type;
-        using typename _Impl::key_type;
-        using typename _Impl::mapped_container_type;
-        using typename _Impl::mapped_type;
-        using typename _Impl::reference;
-        using typename _Impl::reverse_iterator;
-        using typename _Impl::size_type;
-        using typename _Impl::value_compare;
-        using typename _Impl::value_type;
+        using typename Base::const_iterator;
+        using typename Base::const_reference;
+        using typename Base::const_reverse_iterator;
+        using typename Base::containers;
+        using typename Base::difference_type;
+        using typename Base::iterator;
+        using typename Base::key_compare;
+        using typename Base::key_container_type;
+        using typename Base::key_type;
+        using typename Base::mapped_container_type;
+        using typename Base::mapped_type;
+        using typename Base::reference;
+        using typename Base::reverse_iterator;
+        using typename Base::size_type;
+        using typename Base::value_compare;
+        using typename Base::value_type;
 
         // constructors
-        using _Impl::_Impl;
+        using Base::Base;
 
         // iterators
-        using _Impl::begin;
-        using _Impl::end;
-        using _Impl::rbegin;
-        using _Impl::rend;
+        using Base::begin;
+        using Base::end;
+        using Base::rbegin;
+        using Base::rend;
 
-        using _Impl::cbegin;
-        using _Impl::cend;
-        using _Impl::crbegin;
-        using _Impl::crend;
+        using Base::cbegin;
+        using Base::cend;
+        using Base::crbegin;
+        using Base::crend;
 
         // capacity
-        using _Impl::empty;
-        using _Impl::max_size;
-        using _Impl::size;
+        using Base::empty;
+        using Base::max_size;
+        using Base::size;
 
         // element access
-        using _Impl::at;
-        using _Impl::operator[];
+        using Base::at;
+        using Base::operator[];
 
         // modifiers
-        using _Impl::emplace;
-        using _Impl::emplace_hint;
-        using _Impl::insert;
+        using Base::emplace;
+        using Base::emplace_hint;
+        using Base::insert;
         // using _Impl::insert_range;
-        using _Impl::clear;
-        using _Impl::erase;
-        using _Impl::extract;
-        using _Impl::replace;
-        using _Impl::swap;
+        using Base::clear;
+        using Base::erase;
+        using Base::extract;
+        using Base::replace;
+        using Base::swap;
 
-        using _Impl::insert_or_assign;
-        using _Impl::try_emplace;
+        using Base::insert_or_assign;
+        using Base::try_emplace;
 
         // observers
-        using _Impl::key_comp;
-        using _Impl::keys;
-        using _Impl::value_comp;
-        using _Impl::values;
+        using Base::key_comp;
+        using Base::keys;
+        using Base::value_comp;
+        using Base::values;
 
         // map operations
-        using _Impl::contains;
-        using _Impl::count;
-        using _Impl::equal_range;
-        using _Impl::find;
-        using _Impl::lower_bound;
-        using _Impl::upper_bound;
+        using Base::contains;
+        using Base::count;
+        using Base::equal_range;
+        using Base::find;
+        using Base::lower_bound;
+        using Base::upper_bound;
     };
 
     // Deduction guides
@@ -1113,7 +1113,82 @@ namespace TinyCobalt::Common {
              typename Comp = std::less<Key>, // NOLINT
              Container KeyContainer = std::vector<Key>, // NOLINT
              Container MappedContainer = std::vector<T>>
-    class flat_multimap : detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, true> {};
+    class flat_multimap : detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, true> {
+        using Base = detail::FlatMapImpl<Key, T, Comp, KeyContainer, MappedContainer, true>;
+        friend Base;
+
+    public:
+        // FIXME: figure out why operator= cannot be exposed in the derived class even if with CRTP.
+
+        // types
+        using typename Base::const_iterator;
+        using typename Base::const_reference;
+        using typename Base::const_reverse_iterator;
+        using typename Base::containers;
+        using typename Base::difference_type;
+        using typename Base::iterator;
+        using typename Base::key_compare;
+        using typename Base::key_container_type;
+        using typename Base::key_type;
+        using typename Base::mapped_container_type;
+        using typename Base::mapped_type;
+        using typename Base::reference;
+        using typename Base::reverse_iterator;
+        using typename Base::size_type;
+        using typename Base::value_compare;
+        using typename Base::value_type;
+
+        // constructors
+        using Base::Base;
+
+        // iterators
+        using Base::begin;
+        using Base::end;
+        using Base::rbegin;
+        using Base::rend;
+
+        using Base::cbegin;
+        using Base::cend;
+        using Base::crbegin;
+        using Base::crend;
+
+        // capacity
+        using Base::empty;
+        using Base::max_size;
+        using Base::size;
+
+        // element access
+        // using Base::at;
+        // using Base::operator[];
+
+        // modifiers
+        using Base::emplace;
+        using Base::emplace_hint;
+        using Base::insert;
+        // using _Impl::insert_range;
+        using Base::clear;
+        using Base::erase;
+        using Base::extract;
+        using Base::replace;
+        using Base::swap;
+
+        // using Base::insert_or_assign;
+        // using Base::try_emplace;
+
+        // observers
+        using Base::key_comp;
+        using Base::keys;
+        using Base::value_comp;
+        using Base::values;
+
+        // map operations
+        using Base::contains;
+        using Base::count;
+        using Base::equal_range;
+        using Base::find;
+        using Base::lower_bound;
+        using Base::upper_bound;
+    };
 
 
     // Deduction guides
