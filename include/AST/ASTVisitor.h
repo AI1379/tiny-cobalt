@@ -6,13 +6,26 @@
 #define TINY_COBALT_INCLUDE_AST_ASTVISITOR_H_
 
 #include "AST/ASTNode.h"
+#include "Common/Concept.h"
+#include "Common/Utility.h"
 
 #include <proxy.h>
+#include <tuple>
 
 namespace TinyCobalt::AST {
 
+    enum class VisitorState {
+        EmptyNode = 0,
+        Normal,
+        Continue,
+        Break,
+        Exit,
+    };
+
     template<typename... Args>
-    void EmptyVisit(auto &&...) {}
+    VisitorState EmptyVisit(auto &&...) {
+        return VisitorState::Normal;
+    }
 
     PRO_DEF_MEM_DISPATCH(MemBeforeSubtree, beforeSubtree);
     PRO_DEF_WEAK_DISPATCH(WeakMemBeforeSubtree, MemBeforeSubtree, EmptyVisit);
@@ -25,10 +38,10 @@ namespace TinyCobalt::AST {
 
     struct ASTVisitorProxy // NOLINT
         : pro::facade_builder // NOLINT
-          ::add_convention<WeakMemBeforeSubtree, void(ASTNodePtr)> // NOLINT
-          ::add_convention<WeakMemAfterSubtree, void(ASTNodePtr)> // NOLINT
-          ::add_convention<WeakMemBeforeChild, void(ASTNodePtr, ASTNodePtr)> // NOLINT
-          ::add_convention<WeakMemAfterChild, void(ASTNodePtr, ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemBeforeSubtree, VisitorState(ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemAfterSubtree, VisitorState(ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemBeforeChild, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
+          ::add_convention<WeakMemAfterChild, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
           ::build {};
 
     template<typename T>
@@ -40,42 +53,121 @@ namespace TinyCobalt::AST {
     class BaseASTVisitor {
     public:
         // INTERFACES
-        void beforeSubtree(ASTNodePtr node) {}
-        void afterSubtree(ASTNodePtr node) {}
-        void beforeChild(ASTNodePtr node, ASTNodePtr child) {}
-        void afterChild(ASTNodePtr node, ASTNodePtr child) {}
+        VisitorState beforeSubtree(ASTNodePtr node) { return VisitorState::Normal; }
+        VisitorState afterSubtree(ASTNodePtr node) { return VisitorState::Normal; }
+        VisitorState beforeChild(ASTNodePtr node, ASTNodePtr child) { return VisitorState::Normal; }
+        VisitorState afterChild(ASTNodePtr node, ASTNodePtr child) { return VisitorState::Normal; }
 
 
-        void visit(this VisitorImpl &self, ASTNodePtr node) {
-            if (node)
-                self.beforeSubtree(node);
-            if (self.broke) {
-                self.broke = false;
-                return;
+        VisitorState visit(this VisitorImpl &self, ASTNodePtr node) {
+            if (!node)
+                return VisitorState::EmptyNode;
+            switch (self.beforeSubtree(node)) {
+                case VisitorState::Break:
+                    return VisitorState::Normal;
+                case VisitorState::Exit:
+                    return VisitorState::Exit;
+                default:
+                    break;
             }
             for (auto child: node->traverse()) {
                 if (!child)
                     continue;
-                self.beforeChild(node, child);
-                if (self.broke) {
-                    self.broke = false;
-                    break;
+                switch (self.beforeChild(node, child)) {
+                    case VisitorState::Continue:
+                        continue;
+                    case VisitorState::Break:
+                        goto BreakTag;
+                    case VisitorState::Exit:
+                        return VisitorState::Exit;
+                    default:
+                        break;
                 }
-                if (self.continued) {
-                    self.continued = false;
-                    continue;
+                if (self.visit(child) == VisitorState::Exit) {
+                    return VisitorState::Exit;
                 }
-                self.visit(child);
-                self.afterChild(node, child);
+                switch (self.afterChild(node, child)) {
+                    case VisitorState::Continue:
+                        continue;
+                    case VisitorState::Break:
+                        goto BreakTag;
+                    case VisitorState::Exit:
+                        return VisitorState::Exit;
+                    default:
+                        break;
+                }
             }
-            if (node)
-                self.afterSubtree(node);
+        BreakTag:
+            switch (self.afterSubtree(node)) {
+                case VisitorState::Exit:
+                    return VisitorState::Exit;
+                default:
+                    return VisitorState::Normal;
+            }
+        }
+    };
+
+    namespace detail {
+        template<typename T>
+        auto subtreeInvokeHelper(T &&func, ASTNodePtr node) {
+            using Arg = std::tuple_element_t<0, typename function_traits<T>::args_type>;
+            if (node->containType<Arg>()) {
+                return func(node->cast<Arg>());
+            } else {
+                return VisitorState::EmptyNode;
+            }
         }
 
-    protected:
-        bool broke = false, continued = false;
-        void break_() { broke = true; }
-        void continue_() { continued = true; }
+        template<typename T>
+        auto childInvokeHelper(T &&func, ASTNodePtr node, ASTNodePtr child) {
+            using Arg1 = std::tuple_element_t<0, typename function_traits<T>::args_type>;
+            using Arg2 = std::tuple_element_t<1, typename function_traits<T>::args_type>;
+            if (node->containType<Arg1>() && child->containType<Arg2>()) {
+                return func(node->cast<Arg1>(), child->cast<Arg2>());
+            } else {
+                return VisitorState::EmptyNode;
+            }
+        }
+    } // namespace detail
+
+    template<typename... Ts>
+    struct BeforeSubtreeVisitorPack : Ts... {
+        using Ts::operator()...;
+        VisitorState beforeSubtree(ASTNodePtr node) {
+            return (detail::subtreeInvokeHelper<Ts>(static_cast<Ts>(*this), node) | ...);
+        }
+    };
+
+    template<typename... Ts>
+    struct AfterSubtreeVisitorPack : Ts... {
+        using Ts::operator()...;
+        VisitorState afterSubtree(ASTNodePtr node) {
+            return (detail::subtreeInvokeHelper<Ts>(static_cast<Ts>(*this), node) | ...);
+        }
+    };
+
+    template<typename... Ts>
+    struct BeforeChildVisitorPack : Ts... {
+        using Ts::operator()...;
+        VisitorState beforeChild(ASTNodePtr node, ASTNodePtr child) {
+            return (detail::childInvokeHelper<Ts>(static_cast<Ts>(*this), node, child) | ...);
+        }
+    };
+
+    template<typename... Ts>
+    struct AfterChildVisitorPack : Ts... {
+        using Ts::operator()...;
+        VisitorState afterChild(ASTNodePtr node, ASTNodePtr child) {
+            return (detail::childInvokeHelper<Ts>(static_cast<Ts>(*this), node, child) | ...);
+        }
+    };
+
+    template<typename... Ts>
+    struct VisitorPack : Ts... {
+        using Ts::beforeSubtree...;
+        using Ts::afterSubtree...;
+        using Ts::beforeChild...;
+        using Ts::afterChild...;
     };
 } // namespace TinyCobalt::AST
 

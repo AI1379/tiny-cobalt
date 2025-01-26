@@ -12,13 +12,16 @@
 #include "Common/FlatMap.h"
 
 namespace TinyCobalt::Semantic {
+
+    inline constexpr std::string kDefaultScopeName = "<anonymous>";
+
     /**
      * A class to represent a scope in the program.
      */
     template<typename Key, typename Value>
     class Scope {
     public:
-        Scope(Scope *parent = nullptr, const std::string &name = "<anonymous>") : parent_(parent), name_(name) {}
+        Scope(Scope *parent = nullptr, const std::string &name = kDefaultScopeName) : parent_(parent), name_(name) {}
 
         /**
          * Add a symbol to the scope.
@@ -86,6 +89,8 @@ namespace TinyCobalt::Semantic {
             }
             return name_;
         }
+
+        Scope *getParent() const { return parent_; }
 
         using ContainerType = Common::flat_map<Key, Value>;
 

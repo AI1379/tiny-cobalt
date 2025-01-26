@@ -74,7 +74,7 @@ class DumperVisitor : public AST::BaseASTVisitor<DumperVisitor> {
 public:
     explicit DumperVisitor(Utility::Dumper &dumper) : dumper_(dumper) {}
 
-    void beforeSubtree(AST::ASTNodePtr node) {
+    AST::VisitorState beforeSubtree(AST::ASTNodePtr node) {
         if (node->containType<BinaryNode>()) {
             dumper_.endl().dump("BinaryNode").startBlock();
         } else if (node->containType<UnaryNode>()) {
@@ -83,14 +83,16 @@ public:
             dumper_.endl().dump(node->cast<LeafNode>()->name);
             node->cast<LeafNode>()->visited = true;
         }
+        return AST::VisitorState::Normal;
     }
 
-    void afterSubtree(AST::ASTNodePtr node) {
+    AST::VisitorState afterSubtree(AST::ASTNodePtr node) {
         if (node->containType<BinaryNode>()) {
             dumper_.endBlock().endl().dump("EndBinaryNode");
         } else if (node->containType<UnaryNode>()) {
             dumper_.endBlock().endl().dump("EndUnaryNode");
         }
+        return AST::VisitorState::Normal;
     }
 
 private:

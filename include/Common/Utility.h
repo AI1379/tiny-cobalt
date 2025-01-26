@@ -5,6 +5,7 @@
 #ifndef TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
+#include <cstddef>
 #include <proxy.h>
 #include <string>
 #include <type_traits>
@@ -134,6 +135,31 @@ namespace TinyCobalt {
 
     template<typename T, typename U = T>
     using Synth3way = decltype(kSynth3wayComparator(std::declval<T &>(), std::declval<U &>()));
+
+
+    // Primary template: fall back to operator() if T is callable
+    template<typename T>
+    struct function_traits : function_traits<decltype(&T::operator())> {};
+
+    // Specialization for a plain function pointer
+    template<typename R, typename... Args>
+    struct function_traits<R (*)(Args...)> {
+        using result_type = R;
+        using args_type = std::tuple<Args...>;
+    };
+
+    template<typename R, typename... Args>
+    struct function_traits<R(Args...)> {
+        using result_type = R;
+        using args_type = std::tuple<Args...>;
+    };
+
+    // Specialization for a non-static member function pointer (const-qualified)
+    template<typename R, typename C, typename... Args>
+    struct function_traits<R (C::*)(Args...) const> {
+        using result_type = R;
+        using args_type = std::tuple<Args...>;
+    };
 
 } // namespace TinyCobalt
 

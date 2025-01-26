@@ -16,13 +16,11 @@
 %define parse.assert
 
 %code requires {
-#include "AST/ExprNodeImpl.h"
 #include "AST/ExprNode.h"
-#include "AST/StmtNodeImpl.h"
 #include "AST/StmtNode.h"
-#include "AST/TypeNodeImpl.h"
 #include "AST/TypeNode.h"
 #include "AST/ASTNode.h"
+#include "AST/ASTNodeDecl.h"
 #include "LexerParser/Location.h"
 
 using namespace TinyCobalt;

@@ -9,6 +9,7 @@
 #include <compare>
 #include <concepts>
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 namespace TinyCobalt {
@@ -42,6 +43,24 @@ namespace TinyCobalt {
         { cont.max_size() } -> std::same_as<typename C::size_type>;
         { cont.empty() } -> std::same_as<bool>;
     };
+
+    template<typename T>
+    struct is_tuple : std::false_type {};
+
+    template<typename... Ts>
+    struct is_tuple<std::tuple<Ts...>> : std::true_type {};
+
+    template<typename T>
+    inline constexpr bool is_tuple_v = is_tuple<T>::value;
+
+    template<typename T, typename R>
+    inline constexpr bool invocable_tuple_v = false;
+
+    template<typename T, typename... Ts>
+    inline constexpr bool invocable_tuple_v<T, std::tuple<Ts...>> = requires(T t, Ts... ts) {
+        { t(ts...) };
+    };
+
 } // namespace TinyCobalt
 
 #endif // TINY_COBALT_INCLUDE_COMMON_CONCEPT_H_
