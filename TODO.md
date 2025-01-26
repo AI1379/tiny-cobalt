@@ -14,4 +14,4 @@
 ## Optimistic
 
 - [x] Check the performance of `std::variant`, `std::visit` and `std::shared_ptr`.
-- [ ] Implement `flat_map`.
+- [x] Implement `flat_map`.

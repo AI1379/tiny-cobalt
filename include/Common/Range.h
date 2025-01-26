@@ -35,6 +35,7 @@ namespace TinyCobalt {
 #else
             // FIXME: ranges::views::zip in range-v3 seems not to be exactly the same as std::views::zip
             // However the compiler error cannot be reproduced now.
+            // In commit 180ce80455c152905572d5870c57093d881d8e3c the error might be reproduced.
             using ranges::views::zip;
 #endif
         } // namespace views
