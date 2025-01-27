@@ -162,6 +162,7 @@ namespace TinyCobalt::LexerParser {
 %nterm <std::vector<AST::ExprNodePtr>> comma_expr;
 %nterm <AST::CastPtr> cast;
 %nterm <AST::ConditionPtr> condition;
+%nterm <AST::MemberPtr> member;
 
 %nterm <AST::ExprNodePtr> expr;
 
@@ -311,9 +312,11 @@ binary:
 | expr "^=" expr { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::BitXorAssign, $3); }
 | expr "<<=" expr { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::BitLShiftAssign, $3); }
 | expr ">>=" expr { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::BitRShiftAssign, $3); }
+
+member:
 // Note that member and ptr_member only allow "identifier" as the right operand
-| expr "." "identifier" { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::Member, driver.allocNode<AST::VariableNode>($3)); }
-| expr "->" "identifier" { $$ = driver.allocNode<AST::BinaryNode>($1, AST::BinaryOp::PtrMember, driver.allocNode<AST::VariableNode>($3)); }
+  expr "." "identifier" { $$ = driver.allocNode<AST::MemberNode>($1, AST::BinaryOp::Member, $3); }
+| expr "->" "identifier" { $$ = driver.allocNode<AST::MemberNode>($1, AST::BinaryOp::PtrMember, $3); }
 
 unary:
   "+" expr { $$ = driver.allocNode<AST::UnaryNode>(AST::UnaryOp::Positive, $2); } %prec UPLUS
@@ -332,10 +335,9 @@ comma_expr:
 | comma_expr "," expr { $$ = std::move($1); $$.emplace_back($3); }
 
 multiary:
-  "identifier" "(" ")" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::FuncCall, $1); }
-| "identifier" "(" comma_expr ")" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::FuncCall, $1, $3); }
-| "identifier" "[" "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1); }
-| "identifier" "[" comma_expr "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1, $3); }
+  expr "(" ")" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::FuncCall, $1); }
+| expr "(" comma_expr ")" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::FuncCall, $1, $3); }
+| expr "[" comma_expr "]" { $$ = driver.allocNode<AST::MultiaryNode>(AST::MultiaryOp::Subscript, $1, $3); }
 
 cast:
   "static_cast" "<" type ">" "(" expr ")" { $$ = driver.allocNode<AST::CastNode>(AST::CastType::Static, $3, $6); } 
@@ -353,6 +355,7 @@ expr:
 | multiary { $$ = $1; }
 | cast { $$ = $1; }
 | condition { $$ = $1; }
+| member { $$ = $1; }
 | "(" expr ")" { $$ = $2; }
 
 %left ",";

@@ -6,6 +6,8 @@
 #define TINY_COBALT_INCLUDE_AST_ASTNODEDECL_H_
 
 #include <magic_enum.hpp>
+#include <optional>
+#include <variant>
 #include "AST/ASTNode.h"
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
@@ -18,6 +20,8 @@ namespace TinyCobalt::AST {
     // TODO: implement convertibleTo.
     struct SimpleTypeNode : public EnableThisPointer<SimpleTypeNode> {
         const std::string name;
+        using TypeDefPtr = std::variant<AST::AliasDefPtr, AST::StructDefPtr, AST::SimpleTypePtr, std::monostate>;
+        TypeDefPtr def = std::monostate();
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_yield nullptr; }
         bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
@@ -88,6 +92,21 @@ namespace TinyCobalt::AST {
         const SimpleTypeNode Bool("bool");
         const SimpleTypeNode Char("char");
         const SimpleTypeNode Void("void");
+        inline std::optional<SimpleTypePtr> findType(const std::string &name) {
+            if (name == "int")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(Int));
+            if (name == "uint")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(UInt));
+            if (name == "float")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(Float));
+            if (name == "bool")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(Bool));
+            if (name == "char")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(Char));
+            if (name == "void")
+                return std::make_optional(std::make_shared<SimpleTypeNode>(Void));
+            return std::nullopt;
+        }
     } // namespace BuiltInType
 
 #define TYPE_NODE_ASSERT(Name, ...)                                                                                    \
@@ -117,6 +136,7 @@ namespace TinyCobalt::AST {
 
     struct VariableNode : public EnableThisPointer<VariableNode> {
         const std::string name;
+        VariableDefPtr def = nullptr;
         explicit VariableNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_return; }
         AST::TypeNodePtr evalType() { return nullptr; }
@@ -171,17 +191,22 @@ namespace TinyCobalt::AST {
     // Because we allow operator overload, thus this support is necessary.
     struct MultiaryNode : public EnableThisPointer<MultiaryNode> {
         const MultiaryOp op;
-        std::string object;
+        ExprNodePtr object;
         std::vector<ExprNodePtr> operands;
-        explicit MultiaryNode(MultiaryOp op, std::string obj, std::vector<ExprNodePtr> operands = {}) :
-            op(op), object(std::move(obj)), operands(std::move(operands)) {}
-        ASTNodeGen traverse() { co_return; }
+        explicit MultiaryNode(MultiaryOp op, ExprNodePtr obj, std::vector<ExprNodePtr> operands = {}) :
+            op(op), object(obj), operands(std::move(operands)) {}
+        ASTNodeGen traverse() {
+            co_yield object;
+            for (const auto &operand: operands) {
+                co_yield operand;
+            }
+        }
         AST::TypeNodePtr evalType() { return nullptr; }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Multiary";
             json["op"] = magic_enum::enum_name(op);
-            json["object"] = object;
+            json["object"] = object->toJSON();
             json["operands"] = Common::JSON::array();
             for (const auto &operand: operands) {
                 json["operands"].push_back(operand->toJSON());
@@ -230,6 +255,24 @@ namespace TinyCobalt::AST {
             json["condition"] = condition->toJSON();
             json["true_branch"] = trueBranch->toJSON();
             json["false_branch"] = falseBranch->toJSON();
+            return json;
+        }
+    };
+
+    struct MemberNode : public EnableThisPointer<MemberNode> {
+        ExprNodePtr object;
+        BinaryOp op;
+        std::string member;
+        explicit MemberNode(ExprNodePtr object, BinaryOp op, std::string member) :
+            object(std::move(object)), op(op), member(std::move(member)) {}
+        ASTNodeGen traverse() { co_yield object; }
+        AST::TypeNodePtr evalType() { return nullptr; }
+        Common::JSON toJSON() const {
+            Common::JSON json;
+            json["type"] = "Member";
+            json["object"] = object->toJSON();
+            json["op"] = magic_enum::enum_name(op);
+            json["member"] = member;
             return json;
         }
     };

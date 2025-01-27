@@ -18,7 +18,8 @@
     X(Unary, __VA_ARGS__)                                                                                              \
     X(Multiary, __VA_ARGS__)                                                                                           \
     X(Cast, __VA_ARGS__)                                                                                               \
-    X(Condition, __VA_ARGS__)
+    X(Condition, __VA_ARGS__)                                                                                          \
+    X(Member, __VA_ARGS__)
 
 namespace TinyCobalt::AST {
 

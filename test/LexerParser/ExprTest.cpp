@@ -230,16 +230,13 @@ TEST(LexerParser, BinaryExpr6) {
                     "type": "Binary",
                     "op": "Assign",
                     "lhs": {
-                        "type": "Binary",
-                        "lhs": {
+                        "type": "Member",
+                        "object": {
                             "type": "Variable",
                             "name": "a"
                         },
                         "op": "Member",
-                        "rhs": {
-                            "type": "Variable",
-                            "name": "mem"
-                        }
+                        "member": "mem"
                     },
                     "rhs": {
                         "type": "Binary",
@@ -248,16 +245,13 @@ TEST(LexerParser, BinaryExpr6) {
                             "type": "Binary",
                             "op": "Add",
                             "lhs": {
-                                "type": "Binary",
-                                "lhs": {
+                                "type": "Member",
+                                "object": {
                                     "type": "Variable",
                                     "name": "b"
                                 },
                                 "op": "PtrMember",
-                                "rhs": {
-                                    "type": "Variable",
-                                    "name": "exp"
-                                }
+                                "member": "exp"
                             },
                             "rhs": {
                                 "type": "Unary",
@@ -519,7 +513,10 @@ TEST(LexerParser, MultiaryExpr1) {
                     },
                     "op": "Assign",
                     "rhs": {
-                        "object": "fun",
+                        "object": {
+                            "name": "fun",
+                            "type": "Variable"
+                        },
                         "op": "FuncCall",
                         "operands": [
                             {
@@ -533,7 +530,10 @@ TEST(LexerParser, MultiaryExpr1) {
                                 "value": "2"
                             },
                             {
-                                "object": "v",
+                                "object": {
+                                    "name": "v",
+                                    "type": "Variable"
+                                },
                                 "op": "Subscript",
                                 "operands": [
                                     {
