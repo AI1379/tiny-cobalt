@@ -54,7 +54,8 @@ namespace TinyCobalt::Semantic {
             return struc;
         if (auto builtin = AST::BuiltInType::findType(name))
             return builtin;
-        throw std::runtime_error("Type " + name + " not found");
+        // throw std::runtime_error("Type " + name + " not found");
+        return nullptr;
     }
 
     void DeclMatcher::pushScope(const std::string &name) {
@@ -78,6 +79,4 @@ namespace TinyCobalt::Semantic {
         current_struct_ = struc->getParent();
         delete struc;
     }
-
-
 } // namespace TinyCobalt::Semantic

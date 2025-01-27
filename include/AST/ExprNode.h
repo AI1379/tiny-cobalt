@@ -101,13 +101,13 @@ namespace TinyCobalt::AST {
         Const,
     };
 
-    PRO_DEF_MEM_DISPATCH(MemEvalType, evalType);
+    PRO_DEF_MEM_DISPATCH(MemExprType, exprType);
 
 
     struct ExprNodeProxy // NOLINT
         : pro::facade_builder // NOLINT
           ::add_facade<ASTNodeProxy, true> // NOLINT
-          ::add_convention<MemEvalType, AST::TypeNodePtr()> // NOLINT
+          ::add_convention<MemExprType, AST::TypeNodePtr&()> // NOLINT
           ::build {};
 
     template<typename T>

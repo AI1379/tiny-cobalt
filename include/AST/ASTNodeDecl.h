@@ -5,6 +5,7 @@
 #ifndef TINY_COBALT_INCLUDE_AST_ASTNODEDECL_H_
 #define TINY_COBALT_INCLUDE_AST_ASTNODEDECL_H_
 
+#include <cstddef>
 #include <magic_enum.hpp>
 #include <optional>
 #include <variant>
@@ -20,8 +21,8 @@ namespace TinyCobalt::AST {
     // TODO: implement convertibleTo.
     struct SimpleTypeNode : public EnableThisPointer<SimpleTypeNode> {
         const std::string name;
-        using TypeDefPtr = std::variant<AST::AliasDefPtr, AST::StructDefPtr, AST::SimpleTypePtr, std::monostate>;
-        TypeDefPtr def = std::monostate();
+        using TypeDefPtr = std::variant<AST::AliasDefPtr, AST::StructDefPtr, AST::SimpleTypePtr, std::nullptr_t>;
+        TypeDefPtr def = nullptr;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_yield nullptr; }
         bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
@@ -119,18 +120,21 @@ namespace TinyCobalt::AST {
 
     // ExprNode
     // TODO: Compile-time evaluation
-    // FIXME: Implement evalType()
+    // FIXME: Implement exprType()
     struct ConstExprNode : public EnableThisPointer<ConstExprNode> {
         const std::string value;
-        const ConstExprType expr_type;
-        explicit ConstExprNode(std::string value, ConstExprType expr_type) : value(value), expr_type(expr_type) {}
+        const ConstExprType type;
+        explicit ConstExprNode(std::string value, ConstExprType type) : value(value), type(type) {}
         ASTNodeGen traverse() { co_return; }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "ConstExpr";
             json["value"] = value;
-            json["expr_type"] = magic_enum::enum_name(expr_type);
+            json["expr_type"] = magic_enum::enum_name(type);
             return json;
         }
     };
@@ -140,7 +144,10 @@ namespace TinyCobalt::AST {
         VariableDefPtr def = nullptr;
         explicit VariableNode(std::string name) : name(std::move(name)) {}
         ASTNodeGen traverse() { co_return; }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Variable";
@@ -162,7 +169,10 @@ namespace TinyCobalt::AST {
             co_yield lhs;
             co_yield rhs;
         }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Binary";
@@ -178,7 +188,10 @@ namespace TinyCobalt::AST {
         ExprNodePtr operand;
         explicit UnaryNode(UnaryOp op, ExprNodePtr operand) : op(std::move(op)), operand(std::move(operand)) {}
         ASTNodeGen traverse() { co_yield operand; }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Unary";
@@ -202,7 +215,10 @@ namespace TinyCobalt::AST {
                 co_yield operand;
             }
         }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Multiary";
@@ -226,7 +242,10 @@ namespace TinyCobalt::AST {
             co_yield type;
             co_yield operand;
         }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Cast";
@@ -249,7 +268,10 @@ namespace TinyCobalt::AST {
             co_yield trueBranch;
             co_yield falseBranch;
         }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Condition";
@@ -267,7 +289,10 @@ namespace TinyCobalt::AST {
         explicit MemberNode(ExprNodePtr object, BinaryOp op, std::string member) :
             object(std::move(object)), op(op), member(std::move(member)) {}
         ASTNodeGen traverse() { co_yield object; }
-        AST::TypeNodePtr evalType() { return nullptr; }
+        TypeNodePtr &exprType() {
+            static TypeNodePtr ptr_ = nullptr;
+            return ptr_;
+        }
         Common::JSON toJSON() const {
             Common::JSON json;
             json["type"] = "Member";
