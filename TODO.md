@@ -10,6 +10,7 @@
 - [ ] Modularize the implementation of Lexer and Parser.
 - [ ] Implement ASTBuilder to build AST.
 - [ ] Check if declarations of AST nodes should be private.
+- [ ] Support function and operator overload.
 
 ## Optimistic
 
