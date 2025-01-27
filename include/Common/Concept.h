@@ -6,13 +6,9 @@
 #define TINY_COBALT_INCLUDE_COMMON_CONCEPT_H_
 
 #include <cassert>
-#include <compare>
 #include <concepts>
-#include <cstddef>
 #include <memory>
-#include <string>
 #include <type_traits>
-#include <utility>
 
 namespace TinyCobalt {
 

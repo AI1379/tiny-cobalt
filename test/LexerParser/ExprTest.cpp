@@ -597,6 +597,10 @@ TEST(LexerParser, ConditionExpr1) {
     EXPECT_EQ(expected, json);
 }
 
+// FIXME: An error message will be output to std::cerr when running tests with all test suites.
+// It is weird that the error message is not outputted when running this test suite alone.
+// Seemingly this error message is from the lexer.
+// This error message may be shown under test cast LexerParser::IfStmt4.
 TEST(LexerParser, CastExpr1) {
     std::string input = R"(
         a = static_cast<int>(b);

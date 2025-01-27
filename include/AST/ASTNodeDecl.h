@@ -7,7 +7,6 @@
 
 #include <cstddef>
 #include <magic_enum.hpp>
-#include <optional>
 #include <variant>
 #include "AST/ASTNode.h"
 #include "AST/ExprNode.h"
@@ -302,6 +301,10 @@ namespace TinyCobalt::AST {
             return json;
         }
     };
+
+    namespace BuiltInOperator {
+        // TODO: Implement builtin operators
+    }
 
 #define EXPR_NODE_ASSERT(Name, ...)                                                                                    \
     static_assert(ExprNodePtrConcept<Name##Ptr>, "ExprNodePtrConcept<" #Name "Ptr> is not satisfied.");

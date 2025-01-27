@@ -6,7 +6,6 @@
 #define TINY_COBALT_INCLUDE_AST_ASTVISITOR_H_
 
 #include "AST/ASTNode.h"
-#include "Common/Concept.h"
 #include "Common/Utility.h"
 
 #include <proxy.h>
@@ -36,7 +35,9 @@ namespace TinyCobalt::AST {
     PRO_DEF_MEM_DISPATCH(MemAfterChild, afterChild);
     PRO_DEF_WEAK_DISPATCH(WeakMemAfterChild, MemAfterChild, EmptyVisit);
 
-    struct ASTVisitorProxy // NOLINT
+    PRO_DEF_MEM_DISPATCH(MemVisit, visit);
+
+    struct ASTVisitorMiddlewareProxy // NOLINT
         : pro::facade_builder // NOLINT
           ::add_convention<WeakMemBeforeSubtree, VisitorState(ASTNodePtr)> // NOLINT
           ::add_convention<WeakMemAfterSubtree, VisitorState(ASTNodePtr)> // NOLINT
@@ -45,11 +46,22 @@ namespace TinyCobalt::AST {
           ::build {};
 
     template<typename T>
+    concept ASTVisitorMiddlewareConcept = pro::proxiable<T *, ASTVisitorMiddlewareProxy>;
+
+    using ASTVisitorMiddlewarePtr = pro::proxy<ASTVisitorMiddlewareProxy>;
+
+    struct ASTVisitorProxy // NOLINT
+        : pro::facade_builder // NOLINT
+          ::add_facade<ASTVisitorMiddlewareProxy> // NOLINT
+          ::add_convention<MemVisit, VisitorState(ASTNodePtr)> // NOLINT
+          ::build {};
+
+    template<typename T>
     concept ASTVisitorConcept = pro::proxiable<T *, ASTVisitorProxy>;
 
     // We use CRTP to implement the AST visitor
     template<typename VisitorImpl>
-        requires ASTVisitorConcept<VisitorImpl>
+        requires ASTVisitorMiddlewareConcept<VisitorImpl>
     class BaseASTVisitor {
     public:
         // INTERFACES

@@ -107,7 +107,7 @@ namespace TinyCobalt::AST {
     struct ExprNodeProxy // NOLINT
         : pro::facade_builder // NOLINT
           ::add_facade<ASTNodeProxy, true> // NOLINT
-          ::add_convention<MemExprType, AST::TypeNodePtr&()> // NOLINT
+          ::add_convention<MemExprType, AST::TypeNodePtr &()> // NOLINT
           ::build {};
 
     template<typename T>

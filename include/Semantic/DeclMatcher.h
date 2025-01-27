@@ -2,8 +2,8 @@
 // Created by Renatus Madrigal on 01/26/2025
 //
 
-#ifndef TINY_COBALT_INCLUDE_SEMANTIC_DECLSEARCHER_H_
-#define TINY_COBALT_INCLUDE_SEMANTIC_DECLSEARCHER_H_
+#ifndef TINY_COBALT_INCLUDE_SEMANTIC_DECLMATCHER_H_
+#define TINY_COBALT_INCLUDE_SEMANTIC_DECLMATCHER_H_
 
 #include <string>
 #include "AST/ASTNode.h"
@@ -15,7 +15,7 @@
 
 namespace TinyCobalt::Semantic {
 
-    class DeclMatcher : public AST::BaseASTVisitor<DeclMatcher> {
+    class DeclMatcher {
     public:
         DeclMatcher() { pushScope(); }
 
@@ -51,4 +51,4 @@ namespace TinyCobalt::Semantic {
     };
 } // namespace TinyCobalt::Semantic
 
-#endif // TINY_COBALT_INCLUDE_SEMANTIC_DECLSEARCHER_H_
+#endif // TINY_COBALT_INCLUDE_SEMANTIC_DECLMATCHER_H_
