@@ -8,7 +8,9 @@
 #include <cassert>
 #include <compare>
 #include <concepts>
+#include <cstddef>
 #include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -60,6 +62,19 @@ namespace TinyCobalt {
     inline constexpr bool invocable_tuple_v<T, std::tuple<Ts...>> = requires(T t, Ts... ts) {
         { t(ts...) };
     };
+
+    template<typename Ptr>
+    concept SmartPointerLike = requires(Ptr ptr) {
+        typename std::pointer_traits<Ptr>::pointer;
+        { ptr.operator->() } -> std::same_as<typename std::pointer_traits<Ptr>::element_type *>;
+        { ptr.operator*() } -> std::same_as<typename std::pointer_traits<Ptr>::element_type &>;
+    };
+
+    template<typename Ptr>
+    concept RawPointerLike = std::is_pointer_v<Ptr> || std::is_null_pointer_v<Ptr>;
+
+    template<typename Ptr>
+    concept PointerLike = SmartPointerLike<Ptr> || RawPointerLike<Ptr>;
 
 } // namespace TinyCobalt
 

@@ -92,20 +92,21 @@ namespace TinyCobalt::AST {
         const SimpleTypeNode Bool("bool");
         const SimpleTypeNode Char("char");
         const SimpleTypeNode Void("void");
-        inline std::optional<SimpleTypePtr> findType(const std::string &name) {
-            if (name == "int")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(Int));
-            if (name == "uint")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(UInt));
-            if (name == "float")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(Float));
-            if (name == "bool")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(Bool));
-            if (name == "char")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(Char));
-            if (name == "void")
-                return std::make_optional(std::make_shared<SimpleTypeNode>(Void));
-            return std::nullopt;
+        inline SimpleTypePtr findType(const std::string &name) {
+            if (name == "int") {
+                return std::make_shared<SimpleTypeNode>(Int);
+            } else if (name == "uint") {
+                return std::make_shared<SimpleTypeNode>(UInt);
+            } else if (name == "float") {
+                return std::make_shared<SimpleTypeNode>(Float);
+            } else if (name == "bool") {
+                return std::make_shared<SimpleTypeNode>(Bool);
+            } else if (name == "char") {
+                return std::make_shared<SimpleTypeNode>(Char);
+            } else if (name == "void") {
+                return std::make_shared<SimpleTypeNode>(Void);
+            }
+            return nullptr;
         }
     } // namespace BuiltInType
 
