@@ -1,5 +1,5 @@
 add_requires(
-    "microsoft-proxy 3.1.0",
+    "microsoft-proxy 3.2.0",
     "nlohmann_json",
     "magic_enum",
     "range-v3"
