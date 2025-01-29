@@ -5,12 +5,11 @@
 #ifndef TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
-#include <cstddef>
+#include <concepts>
 #include <proxy.h>
 #include <string>
 #include <type_traits>
 #include <variant>
-#include "Common/Concept.h"
 
 namespace TinyCobalt {
     template<typename T>
@@ -160,6 +159,16 @@ namespace TinyCobalt {
         using result_type = R;
         using args_type = std::tuple<Args...>;
     };
+
+    struct RttiAware : pro::facade_builder // NOLINT
+                       ::support_rtti // NOLINT
+                       ::build {};
+
+    // TODO: add a restrict to the type of the proxy
+    template<typename T, typename P>
+    bool containType(pro::proxy<P> proxy) {
+        return typeid(T).hash_code() == proxy_typeid(*proxy).hash_code();
+    }
 
 } // namespace TinyCobalt
 

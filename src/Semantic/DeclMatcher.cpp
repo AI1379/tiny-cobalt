@@ -5,7 +5,11 @@
 #include "Semantic/DeclMatcher.h"
 #include "AST/ASTVisitor.h"
 
+#define TINY_COBALT_ENABLE_DECL_MATCHER 0
+
 namespace TinyCobalt::Semantic {
+    // TODO: refactor these function to use RTTI.
+#if TINY_COBALT_ENABLE_DECL_MATCHER
     AST::VisitorState DeclMatcher::beforeSubtree(AST::ASTNodePtr node) {
         // TODO: Use switch to optimize
         if (node->containType<AST::FuncDefNode>()) {
@@ -79,4 +83,5 @@ namespace TinyCobalt::Semantic {
         current_struct_ = struc->getParent();
         delete struc;
     }
+#endif
 } // namespace TinyCobalt::Semantic
