@@ -12,6 +12,7 @@
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
+#include "Common/Assert.h"
 
 namespace TinyCobalt::AST {
 
@@ -110,8 +111,7 @@ namespace TinyCobalt::AST {
         }
     } // namespace BuiltInType
 
-#define TYPE_NODE_ASSERT(Name, ...)                                                                                    \
-    static_assert(TypeNodePtrConcept<Name##Ptr>, "TypeNodePtrConcept<" #Name "Ptr> is not satisfied.");
+#define TYPE_NODE_ASSERT(Name, ...) TINY_COBALT_CONCEPT_ASSERT(TypeNodePtrConcept, Name##Ptr);
 
     TINY_COBALT_AST_TYPE_NODES(TYPE_NODE_ASSERT);
 
@@ -306,8 +306,7 @@ namespace TinyCobalt::AST {
         // TODO: Implement builtin operators
     }
 
-#define EXPR_NODE_ASSERT(Name, ...)                                                                                    \
-    static_assert(ExprNodePtrConcept<Name##Ptr>, "ExprNodePtrConcept<" #Name "Ptr> is not satisfied.");
+#define EXPR_NODE_ASSERT(Name, ...) TINY_COBALT_CONCEPT_ASSERT(ExprNodePtrConcept, Name##Ptr);
 
     TINY_COBALT_AST_EXPR_NODES(EXPR_NODE_ASSERT);
 
@@ -559,8 +558,7 @@ namespace TinyCobalt::AST {
         }
     };
 
-#define STMT_NODE_ASSERT(Name, ...)                                                                                    \
-    static_assert(StmtNodePtrConcept<Name##Ptr>, "StmtNodePtrConcept<" #Name "Ptr> is not satisfied.");
+#define STMT_NODE_ASSERT(Name, ...) TINY_COBALT_CONCEPT_ASSERT(StmtNodePtrConcept, Name##Ptr);
 
     TINY_COBALT_AST_STMT_NODES(STMT_NODE_ASSERT);
 

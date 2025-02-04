@@ -11,6 +11,7 @@
 #include "AST/ASTVisitor.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
+#include "Common/Assert.h"
 #include "Semantic/Scope.h"
 
 namespace TinyCobalt::Semantic {
@@ -49,6 +50,9 @@ namespace TinyCobalt::Semantic {
         Scope<std::string, AST::AliasDefPtr> *current_alias_ = nullptr;
         Scope<std::string, AST::StructDefPtr> *current_struct_ = nullptr;
     };
+
+    TINY_COBALT_CONCEPT_ASSERT(AST::ASTVisitorMiddlewareConcept, DeclMatcher);
+
 } // namespace TinyCobalt::Semantic
 
 #endif // TINY_COBALT_INCLUDE_SEMANTIC_DECLMATCHER_H_
