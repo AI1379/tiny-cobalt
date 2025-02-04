@@ -170,6 +170,164 @@ namespace TinyCobalt {
         return typeid(T).hash_code() == proxy_typeid(*proxy).hash_code();
     }
 
+    template<typename T, typename P>
+    bool pointerType(pro::proxy<P> proxy) {
+        return typeid(T).hash_code() == proxy_typeid(proxy).hash_code();
+    }
+
+    // Implemented reflection for proxy, might be simplified with the upcoming C++26
+    // See https://github.com/microsoft/proxy/issues/237#issuecomment-2623871501
+    // TODO: Implementation details of ms-proxy are used. Need to remove them.
+    namespace details {
+
+        // Reflectors for weak_dispatch with cvref and noexcept qualifiers
+        template<class D, class O>
+        struct single_weak_impl_reflector;
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...)> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) &> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) & noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) &&> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, T &&, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) && noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, T &&, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, const T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, const T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const &> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, const T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const & noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, const T &, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const &&> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_invocable_r_v<R, D, const T &&, Args...>) {}
+            bool value;
+        };
+        template<class D, class R, class... Args>
+        struct single_weak_impl_reflector<D, R(Args...) const && noexcept> {
+            template<class T>
+            constexpr explicit single_weak_impl_reflector(std::in_place_type_t<T>) :
+                value(std::is_nothrow_invocable_r_v<R, D, const T &&, Args...>) {}
+            bool value;
+        };
+
+        // Implementation of weak_impl_reflector
+        template<class... Rs>
+        struct weak_impl_reflector_impl : Rs... {
+            template<class T>
+            constexpr explicit weak_impl_reflector_impl(std::in_place_type_t<T>) : Rs(std::in_place_type<T>)... {}
+
+            template<class F, bool IsDirect, class R>
+            struct accessor {
+                template<class D, class O>
+                bool implemented() const noexcept {
+                    using Impl = single_weak_impl_reflector<D, O>;
+                    static_assert(std::is_base_of_v<Impl, weak_impl_reflector_impl>,
+                                  "this function only provides query for weak_dispatch");
+                    return static_cast<const Impl &>(pro::proxy_reflect<IsDirect, R>(pro::access_proxy<F>(*this)))
+                            .value;
+                }
+            };
+        };
+
+        // TODO: figure out how this works
+        template<class O, class I>
+        struct merge_weak_impl_reflector_reduction;
+        template<class... Rs1, class... Rs2>
+        struct merge_weak_impl_reflector_reduction<weak_impl_reflector_impl<Rs1...>, weak_impl_reflector_impl<Rs2...>>
+            : std::type_identity<weak_impl_reflector_impl<Rs1..., Rs2...>> {};
+
+        template<class D, class... Os>
+        using compact_weak_impl_reflector = weak_impl_reflector_impl<single_weak_impl_reflector<D, Os>...>;
+
+        template<class O, class C, class D>
+        struct weak_impl_reduction_impl : std::type_identity<O> {};
+        template<class O, class C, class D>
+        struct weak_impl_reduction_impl<O, C, pro::weak_dispatch<D>>
+            : merge_weak_impl_reflector_reduction<
+                      O, pro::details::instantiated_t<compact_weak_impl_reflector, typename C::overload_types, D>> {};
+        template<class O, class I>
+        struct weak_impl_reduction : weak_impl_reduction_impl<O, I, typename I::dispatch_type> {};
+        template<class O, class I>
+        using weak_impl_reduction_t = typename weak_impl_reduction<O, I>::type;
+
+        template<class... Cs>
+        using weak_impl_recursive_reduction_t =
+                pro::details::recursive_reduction_t<weak_impl_reduction_t, weak_impl_reflector_impl<>, Cs...>;
+
+        template<class F>
+        struct weak_impl_reflector_impl_traits
+            : std::type_identity<
+                      pro::details::instantiated_t<weak_impl_recursive_reduction_t, typename F::convention_types>> {};
+        template<class F>
+        using weak_impl_reflector_impl_t = typename weak_impl_reflector_impl_traits<F>::type;
+
+    } // namespace details
+
+    template<class F>
+    struct WeakImplementedRefl : details::weak_impl_reflector_impl_t<F> {
+        template<class T>
+        constexpr explicit WeakImplementedRefl(std::in_place_type_t<T>) :
+            details::weak_impl_reflector_impl_t<F>(std::in_place_type<T>) {}
+    };
+
 } // namespace TinyCobalt
 
 #endif // TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
