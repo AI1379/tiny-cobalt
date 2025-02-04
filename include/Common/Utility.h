@@ -6,8 +6,10 @@
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
 #include <concepts>
+#include <optional>
 #include <proxy.h>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <variant>
 
@@ -159,10 +161,6 @@ namespace TinyCobalt {
         using result_type = R;
         using args_type = std::tuple<Args...>;
     };
-
-    struct RttiAware : pro::facade_builder // NOLINT
-                       ::support_rtti // NOLINT
-                       ::build {};
 
     // TODO: add a restrict to the type of the proxy
     template<typename T, typename P>
@@ -326,6 +324,42 @@ namespace TinyCobalt {
         template<class T>
         constexpr explicit WeakImplementedRefl(std::in_place_type_t<T>) :
             details::weak_impl_reflector_impl_t<F>(std::in_place_type<T>) {}
+    };
+
+    template<typename T>
+    concept RttiAwareProxy = requires(T proxy) {
+        { proxy_typeid(*proxy) } -> std::same_as<const std::type_info &>;
+    };
+
+    template<typename F, typename... Fs>
+        requires(std::is_same_v<typename function_traits<F>::result_type, // NOLINT
+                                typename function_traits<Fs>::result_type> &&
+                 ...)
+    struct Matcher : F, Fs... {
+        Matcher() = default;
+
+        using Result = typename function_traits<F>::result_type;
+
+        static_assert(std::is_default_constructible_v<Result>, "Result type should be default constructible");
+
+        template<typename T>
+            requires RttiAwareProxy<T>
+        Result operator()(T op) const {
+            Result result;
+            try_invoke(result, static_cast<F>(*this), op);
+            (try_invoke(result, static_cast<Fs>(*this), op), ...);
+            return result;
+        }
+
+        template<typename O, typename T>
+            requires RttiAwareProxy<T>
+        void try_invoke(Result &res, O &&f, T op) const {
+            auto type_hash = proxy_typeid(op).hash_code();
+            using Arg = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<O>::args_type>>;
+            if (typeid(Arg).hash_code() == type_hash) {
+                res = f(proxy_cast<Arg>(op));
+            }
+        }
     };
 
 } // namespace TinyCobalt
