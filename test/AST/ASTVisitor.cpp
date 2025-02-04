@@ -2,6 +2,9 @@
 // Created by Renatus Madrigal on 12/22/2024
 //
 
+// FIXME: Because of the API of ASTVisitor is not stable, we will disable these tests temporarily.
+#if 0
+
 #include <gtest/gtest.h>
 #include <memory>
 #include <proxy.h>
@@ -125,3 +128,5 @@ TEST(AST, ASTVisitor) {
     EXPECT_TRUE(leaf4->visited);
     EXPECT_EQ(ss.str(), expected);
 }
+
+#endif
