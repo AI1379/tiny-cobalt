@@ -5,39 +5,37 @@
 #include "Semantic/DeclMatcher.h"
 #include "AST/ASTVisitor.h"
 
-#define TINY_COBALT_ENABLE_DECL_MATCHER 0
-
 namespace TinyCobalt::Semantic {
-    // TODO: refactor these function to use RTTI.
-#if TINY_COBALT_ENABLE_DECL_MATCHER
     AST::VisitorState DeclMatcher::beforeSubtree(AST::ASTNodePtr node) {
-        // TODO: Use switch to optimize
-        if (node->containType<AST::FuncDefNode>()) {
-            auto decl = node->cast<AST::FuncDefNode>();
-            current_func_->addSymbol(decl->name, decl);
-        } else if (node->containType<AST::VariableDefNode>()) {
-            auto decl = node->cast<AST::VariableDefNode>();
-            current_variable_->addSymbol(decl->name, decl);
-        } else if (node->containType<AST::AliasDefNode>()) {
-            auto decl = node->cast<AST::AliasDefNode>();
-            current_alias_->addSymbol(decl->name, decl);
-        } else if (node->containType<AST::StructDefNode>()) {
-            auto decl = node->cast<AST::StructDefNode>();
-            current_struct_->addSymbol(decl->name, decl);
-        } else if (node->containType<AST::VariableNode>()) {
-            node->cast<AST::VariableNode>()->def = current_variable_->getSymbol(node->cast<AST::VariableNode>()->name);
-        } else if (node->containType<AST::SimpleTypeNode>()) {
-            auto type = node->cast<AST::SimpleTypeNode>();
-            type->def = findType(type->name);
+        size_t type_hash = proxy_typeid(*node).hash_code();
+        if (type_hash == typeid(AST::FuncDefNode).hash_code()) {
+            auto &decl = proxy_cast<AST::FuncDefNode &>(*node);
+            current_func_->addSymbol(decl.name, decl.shared_from_this());
+        } else if (type_hash == typeid(AST::VariableDefNode).hash_code()) {
+            auto &decl = proxy_cast<AST::VariableDefNode &>(*node);
+            current_variable_->addSymbol(decl.name, decl.shared_from_this());
+        } else if (type_hash == typeid(AST::AliasDefNode).hash_code()) {
+            auto &decl = proxy_cast<AST::AliasDefNode &>(*node);
+            current_alias_->addSymbol(decl.name, decl.shared_from_this());
+        } else if (type_hash == typeid(AST::StructDefNode).hash_code()) {
+            auto &decl = proxy_cast<AST::StructDefNode &>(*node);
+            current_struct_->addSymbol(decl.name, decl.shared_from_this());
+        } else if (type_hash == typeid(AST::VariableNode).hash_code()) {
+            auto &decl = proxy_cast<AST::VariableNode &>(*node);
+            decl.def = current_variable_->getSymbol(decl.name);
+        } else if (type_hash == typeid(AST::SimpleTypeNode).hash_code()) {
+            auto &type = proxy_cast<AST::SimpleTypeNode &>(*node);
+            type.def = findType(type.name);
         }
         return AST::VisitorState::Normal;
     }
 
     AST::VisitorState DeclMatcher::beforeChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        if (child->containType<AST::BlockNode>()) {
+        size_t type_hash = proxy_typeid(*node).hash_code();
+        if (type_hash == typeid(AST::BlockNode).hash_code()) {
             auto name = kDefaultScopeName;
-            if (node->containType<AST::FuncDefNode>()) {
-                name = node->cast<AST::FuncDefNode>()->name;
+            if (proxy_typeid(*node).hash_code() == typeid(AST::FuncDefNode).hash_code()) {
+                name = proxy_cast<AST::FuncDefNode &>(*node).name;
             }
             pushScope(name);
         }
@@ -45,7 +43,8 @@ namespace TinyCobalt::Semantic {
     }
 
     AST::VisitorState DeclMatcher::afterChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        if (child->containType<AST::BlockNode>()) {
+        size_t type_hash = proxy_typeid(*node).hash_code();
+        if (type_hash == typeid(AST::BlockNode).hash_code()) {
             popScope();
         }
         return AST::VisitorState::Normal;
@@ -83,5 +82,4 @@ namespace TinyCobalt::Semantic {
         current_struct_ = struc->getParent();
         delete struc;
     }
-#endif
 } // namespace TinyCobalt::Semantic

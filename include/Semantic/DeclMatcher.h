@@ -16,7 +16,7 @@
 
 namespace TinyCobalt::Semantic {
 
-    class DeclMatcher {
+    class DeclMatcher : AST::BaseASTVisitorMiddleware<DeclMatcher> {
     public:
         DeclMatcher() { pushScope(); }
 
