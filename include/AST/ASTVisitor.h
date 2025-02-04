@@ -10,6 +10,7 @@
 
 #include <concepts>
 #include <proxy.h>
+#include <type_traits>
 
 namespace TinyCobalt::AST {
 
@@ -40,7 +41,8 @@ namespace TinyCobalt::AST {
           ::build {};
 
     template<typename T>
-    concept ASTVisitorMiddlewareConcept = pro::proxiable<T *, ASTVisitorMiddlewareProxy>;
+    concept ASTVisitorMiddlewareConcept =
+            pro::proxiable<T *, ASTVisitorMiddlewareProxy> && std::is_default_constructible_v<T>;
 
     using ASTVisitorMiddlewarePtr = pro::proxy<ASTVisitorMiddlewareProxy>;
 
