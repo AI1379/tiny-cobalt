@@ -49,6 +49,11 @@ namespace TinyCobalt::Semantic {
         Scope<std::string, AST::VariableDefPtr> *current_variable_ = nullptr;
         Scope<std::string, AST::AliasDefPtr> *current_alias_ = nullptr;
         Scope<std::string, AST::StructDefPtr> *current_struct_ = nullptr;
+
+        void tryAddSymbol(AST::FuncDefPtr ptr);
+        void tryAddSymbol(AST::VariableDefPtr ptr);
+        void tryAddSymbol(AST::AliasDefPtr ptr);
+        void tryAddSymbol(AST::StructDefPtr ptr);
     };
 
     TINY_COBALT_CONCEPT_ASSERT(AST::ASTVisitorMiddlewareConcept, DeclMatcher);

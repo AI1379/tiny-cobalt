@@ -6,7 +6,6 @@
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
 #include <concepts>
-#include <optional>
 #include <proxy.h>
 #include <string>
 #include <tuple>
@@ -380,6 +379,14 @@ namespace TinyCobalt {
 
     template<typename... Fs>
     Matcher(Fs...) -> Matcher<Fs...>;
+
+    template<typename... Fs>
+    struct VariantVisitor : Fs... {
+        using Fs::operator()...;
+    };
+
+    template<typename... Fs>
+    VariantVisitor(Fs...) -> VariantVisitor<Fs...>;
 
 } // namespace TinyCobalt
 

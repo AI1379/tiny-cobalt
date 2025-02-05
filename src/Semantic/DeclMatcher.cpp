@@ -4,38 +4,67 @@
 
 #include "Semantic/DeclMatcher.h"
 #include "AST/ASTVisitor.h"
+#include "AST/ExprNode.h"
+#include "AST/StmtNode.h"
+#include "AST/TypeNode.h"
+#include "Common/Utility.h"
 
 namespace TinyCobalt::Semantic {
-    AST::VisitorState DeclMatcher::beforeSubtree(AST::ASTNodePtr node) {
-        size_t type_hash = proxy_typeid(*node).hash_code();
-        if (type_hash == typeid(AST::FuncDefNode).hash_code()) {
-            auto &decl = proxy_cast<AST::FuncDefNode &>(*node);
-            current_func_->addSymbol(decl.name, decl.shared_from_this());
-        } else if (type_hash == typeid(AST::VariableDefNode).hash_code()) {
-            auto &decl = proxy_cast<AST::VariableDefNode &>(*node);
-            current_variable_->addSymbol(decl.name, decl.shared_from_this());
-        } else if (type_hash == typeid(AST::AliasDefNode).hash_code()) {
-            auto &decl = proxy_cast<AST::AliasDefNode &>(*node);
-            current_alias_->addSymbol(decl.name, decl.shared_from_this());
-        } else if (type_hash == typeid(AST::StructDefNode).hash_code()) {
-            auto &decl = proxy_cast<AST::StructDefNode &>(*node);
-            current_struct_->addSymbol(decl.name, decl.shared_from_this());
-        } else if (type_hash == typeid(AST::VariableNode).hash_code()) {
-            auto &decl = proxy_cast<AST::VariableNode &>(*node);
-            decl.def = current_variable_->getSymbol(decl.name);
-        } else if (type_hash == typeid(AST::SimpleTypeNode).hash_code()) {
-            auto &type = proxy_cast<AST::SimpleTypeNode &>(*node);
-            type.def = findType(type.name);
+
+    // TODO: Merge all these functions
+    void DeclMatcher::tryAddSymbol(AST::FuncDefPtr ptr) {
+        if (current_alias_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_struct_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_variable_->getSymbol(ptr->name) != nullptr) {
+            throw std::runtime_error("Symbol " + ptr->name + " already exists");
         }
+        current_func_->addSymbol(ptr->name, ptr);
+    }
+
+    void DeclMatcher::tryAddSymbol(AST::VariableDefPtr ptr) {
+        if (current_alias_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_struct_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_func_->getSymbol(ptr->name) != nullptr) {
+            throw std::runtime_error("Symbol " + ptr->name + " already exists");
+        }
+        current_variable_->addSymbol(ptr->name, ptr);
+    }
+
+    void DeclMatcher::tryAddSymbol(AST::AliasDefPtr ptr) {
+        if (current_func_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_struct_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_variable_->getSymbol(ptr->name) != nullptr) {
+            throw std::runtime_error("Symbol " + ptr->name + " already exists");
+        }
+        current_alias_->addSymbol(ptr->name, ptr);
+    }
+
+    void DeclMatcher::tryAddSymbol(AST::StructDefPtr ptr) {
+        if (current_alias_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_func_->getSymbol(ptr->name) != nullptr // NOLINT
+            || current_variable_->getSymbol(ptr->name) != nullptr) {
+            throw std::runtime_error("Symbol " + ptr->name + " already exists");
+        }
+        current_struct_->addSymbol(ptr->name, ptr);
+    }
+
+
+    AST::VisitorState DeclMatcher::beforeSubtree(AST::ASTNodePtr node) {
+        auto matcher = Matcher{[&](AST::FuncDefPtr ptr) { tryAddSymbol(ptr); },
+                               [&](AST::VariableDefPtr ptr) { tryAddSymbol(ptr); },
+                               [&](AST::AliasDefPtr ptr) { tryAddSymbol(ptr); },
+                               [&](AST::StructDefPtr ptr) { tryAddSymbol(ptr); },
+                               [&](AST::VariablePtr ptr) { ptr->def = current_variable_->getSymbol(ptr->name); },
+                               [&](AST::SimpleTypePtr ptr) { ptr->def = findType(ptr->name); }};
         return AST::VisitorState::Normal;
     }
 
     AST::VisitorState DeclMatcher::beforeChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        size_t type_hash = proxy_typeid(*node).hash_code();
-        if (type_hash == typeid(AST::BlockNode).hash_code()) {
+        size_t type_hash = proxy_typeid(child).hash_code();
+        if (type_hash == typeid(AST::BlockPtr).hash_code()) {
             auto name = kDefaultScopeName;
             if (proxy_typeid(*node).hash_code() == typeid(AST::FuncDefNode).hash_code()) {
-                name = proxy_cast<AST::FuncDefNode &>(*node).name;
+                name = proxy_cast<AST::FuncDefPtr>(node)->name;
             }
             pushScope(name);
         }
@@ -43,8 +72,8 @@ namespace TinyCobalt::Semantic {
     }
 
     AST::VisitorState DeclMatcher::afterChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        size_t type_hash = proxy_typeid(*node).hash_code();
-        if (type_hash == typeid(AST::BlockNode).hash_code()) {
+        size_t type_hash = proxy_typeid(node).hash_code();
+        if (type_hash == typeid(AST::BlockPtr).hash_code()) {
             popScope();
         }
         return AST::VisitorState::Normal;
