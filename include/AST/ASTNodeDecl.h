@@ -13,6 +13,7 @@
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
 #include "Common/Assert.h"
+#include "Common/Utility.h"
 
 namespace TinyCobalt::AST {
 
@@ -64,23 +65,29 @@ namespace TinyCobalt::AST {
      * because complex function pointer and pointer array can be more structured.
      */
     struct ComplexTypeNode : public EnableThisPointer<ComplexTypeNode> {
+        using TemplateArgType = std::variant<TypeNodePtr, ExprNodePtr>;
         const std::string templateName;
-        const std::vector<TypeNodePtr> templateArgs;
-        explicit ComplexTypeNode(std::string templateName, std::vector<TypeNodePtr> templateArgs) :
+        const std::vector<TemplateArgType> templateArgs;
+        explicit ComplexTypeNode(std::string templateName, std::vector<TemplateArgType> templateArgs) :
             templateName(std::move(templateName)), templateArgs(std::move(templateArgs)) {}
 
         ASTNodeGen traverse() {
-            for (auto &arg: templateArgs)
-                co_yield arg;
+            auto visitor = Matcher{[&](const TypeNodePtr &type) -> ASTNodePtr { return type; },
+                                   [&](const ExprNodePtr &expr) -> ASTNodePtr { return expr; }};
+            for (auto &arg: templateArgs) {
+                co_yield std::visit(visitor, arg);
+            }
         }
         bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
         Common::JSON toJSON() const {
+            auto visitor = Matcher{[&](const TypeNodePtr &type) -> ASTNodePtr { return type; },
+                                   [&](const ExprNodePtr &expr) -> ASTNodePtr { return expr; }};
             Common::JSON json;
             json["type"] = "ComplexType";
             json["template_name"] = templateName;
             json["template_args"] = Common::JSON::array();
             for (const auto &arg: templateArgs) {
-                json["template_args"].push_back(arg->toJSON());
+                json["template_args"].push_back(std::visit(visitor, arg)->toJSON());
             }
             return json;
         }

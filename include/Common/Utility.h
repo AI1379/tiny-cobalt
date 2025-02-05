@@ -13,19 +13,9 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include "Common/Concept.h"
 
 namespace TinyCobalt {
-    template<typename T>
-    struct is_variant : std::false_type {};
-    template<typename... Ts>
-    struct is_variant<std::variant<Ts...>> : std::true_type {};
-    template<typename... Ts>
-    struct is_variant<std::variant<Ts...> const> : std::true_type {};
-    template<typename T>
-    inline constexpr bool is_variant_v = is_variant<T>::value;
-    template<typename T>
-    concept Variant = is_variant_v<T>;
-
     namespace detail {
         template<typename... Args>
         struct MergedVariantHelper;
@@ -81,6 +71,8 @@ namespace TinyCobalt {
     inline constexpr bool IsVariantMember = false;
     template<typename T, typename... VTs>
     inline constexpr bool IsVariantMember<T, std::variant<VTs...>> = (std::is_same_v<T, VTs> || ...);
+
+    // TODO: Implement a VariantWithConcept
 
     template<typename Alloc, typename T>
     using AllocRebind = std::allocator_traits<Alloc>::template rebind_alloc<T>;

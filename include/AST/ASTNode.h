@@ -10,8 +10,10 @@
 #include <memory>
 #include <proxy.h>
 #include <type_traits>
+#include <variant>
 #include "Common/Generator.h"
 #include "Common/JSON.h"
+#include "Common/Utility.h"
 
 
 #define TINY_COBALT_AST_NODES(X, ...)                                                                                  \
@@ -49,6 +51,19 @@ namespace TinyCobalt::AST {
     template<typename T>
     concept ASTNodePtrConcept = pro::proxiable<T, ASTNodeProxy> || std::is_convertible_v<T, pro::proxy<ASTNodeProxy>>;
 
+    namespace detail {
+        template<typename T>
+        struct VariantASTNodePtrImpl : std::false_type {};
+
+        template<typename... Ts>
+        struct VariantASTNodePtrImpl<std::variant<Ts...>> {
+            static constexpr bool value = (ASTNodePtrConcept<Ts> && ...);
+        };
+    } // namespace detail
+
+    template<typename T>
+    concept VariantASTNodePtrConcept = detail::VariantASTNodePtrImpl<T>::value;
+
     using ASTNodePtr = pro::proxy<ASTNodeProxy>;
     using ASTNodeGen = Utility::Generator<ASTNodePtr>;
 
@@ -56,7 +71,14 @@ namespace TinyCobalt::AST {
     inline std::ostream &operator<<(std::ostream &os, const ASTNodePtr &node) { return os << node->toJSON(); }
 
     template<typename T>
-        requires ASTNodePtrConcept<T>
+        requires is_variant_v<T>
+    inline std::ostream &operator<<(std::ostream &os, const T &node) {
+        std::visit([&os](const auto &node) { os << node; }, node);
+        return os;
+    }
+
+    template<typename T>
+        requires(ASTNodePtrConcept<T> || is_variant_v<T>)
     inline std::ostream &operator<<(std::ostream &os, const std::vector<T> &nodes) {
         os << "[";
         for (const auto &node: nodes)

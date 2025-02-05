@@ -151,7 +151,7 @@ namespace TinyCobalt::LexerParser {
 
 %nterm <AST::TypeNodePtr> type;
 %nterm <std::vector<AST::TypeNodePtr>> types;
-/* %nterm <std::vector<AST::ASTNodePtr>> types_and_exprs; */
+%nterm <std::vector<std::variant<AST::TypeNodePtr, AST::ExprNodePtr>>> template_arguments;
 
 // Expr
 %nterm <AST::ConstExprPtr> const_expr;
@@ -253,7 +253,7 @@ func_type:
 
 // TODO: Support expr as template argument
 complex_type:
-  "typename" "<" types ">"  { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $3); }
+  "typename" template_arguments ">" { $$ = driver.allocNode<AST::ComplexTypeNode>($1, $2); } 
 
 type:
   simple_type { $$ = $1; }
@@ -264,11 +264,11 @@ types:
   type { $$ = {$1}; }
 | types "," type { $$ = std::move($1); $$.emplace_back($3); }
 
-/* types_and_exprs:
-  type { $$ = {$1}; }
-| expr { $$ = {$1}; }
-| types_and_exprs "," type { $$ = std::move($1); $$.emplace_back($3); }
-| types_and_exprs "," expr { $$ = std::move($1); $$.emplace_back($3); } */
+template_arguments:
+  "<" type { $$ = {$2}; }
+| "<" expr { $$ = {$2}; }
+| template_arguments "," type { $$ = std::move($1); $$.emplace_back($3); }
+| template_arguments "," expr { $$ = std::move($1); $$.emplace_back($3); }
 
 const_expr:
   "int" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Int); }
@@ -377,6 +377,7 @@ expr:
 %right "!" "~";
 %left "(" ")" "[" "]" "{" "}";
 %left "." "->";
+%left TPLGT;
 %right "if" "else" "while" "for" "return" "break" "continue" "struct" "using" "static_cast" "const_cast" "reinterpret_cast";
 
 %%

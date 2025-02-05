@@ -9,6 +9,7 @@
 #include <concepts>
 #include <memory>
 #include <type_traits>
+#include <variant>
 
 namespace TinyCobalt {
 
@@ -71,6 +72,17 @@ namespace TinyCobalt {
 
     template<typename Ptr>
     concept PointerLike = SmartPointerLike<Ptr> || RawPointerLike<Ptr>;
+
+    template<typename T>
+    struct is_variant : std::false_type {};
+    template<typename... Ts>
+    struct is_variant<std::variant<Ts...>> : std::true_type {};
+    template<typename... Ts>
+    struct is_variant<std::variant<Ts...> const> : std::true_type {};
+    template<typename T>
+    inline constexpr bool is_variant_v = is_variant<T>::value;
+    template<typename T>
+    concept Variant = is_variant_v<T>;
 
 } // namespace TinyCobalt
 
