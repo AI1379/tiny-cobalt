@@ -6,10 +6,12 @@
 #define TINY_COBALT_INCLUDE_COMMON_UTILITY_H_
 
 #include <concepts>
+#include <cstddef>
 #include <proxy.h>
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace TinyCobalt {
@@ -172,6 +174,14 @@ namespace TinyCobalt {
         return typeid(T).hash_code() == proxy_typeid(proxy).hash_code();
     }
 
+#ifdef __cpp_pack_indexing
+    template<size_t kIdx, typename... Ts>
+    using PackIndex = Ts...[0];
+#else
+    template<size_t kIdx, typename... Ts>
+    using PackIndex = std::tuple_element_t<kIdx, std::tuple<Ts...>>;
+#endif
+
     // Implemented reflection for proxy, might be simplified with the upcoming C++26
     // See https://github.com/microsoft/proxy/issues/237#issuecomment-2623871501
     // TODO: Implementation details of ms-proxy are used. Need to remove them.
@@ -330,63 +340,70 @@ namespace TinyCobalt {
         { proxy_typeid(*proxy) } -> std::same_as<const std::type_info &>;
     };
 
+    template<typename M>
+    struct MatcherTraits {
+        using Result = typename M::Result;
+        using CandidateArgs = typename M::CandidateArgs;
+        // TODO: It may be possible to implement this using C++26
+        // using CandidateArgs = std::tuple < candidate arguments >;
+    };
 
-    // FIXME: Failed to handle unique_ptr
-    template<typename F, typename... Fs>
-        requires(std::is_same_v<typename function_traits<F>::result_type, // NOLINT
-                                typename function_traits<Fs>::result_type> &&
-                 ...)
-    struct Matcher : F, Fs... {
-        using Result = typename function_traits<F>::result_type;
+    // TODO: Implement Matcher concept.
+    template<typename M>
+    concept MatcherConcept = requires(M m) { typename MatcherTraits<M>::Result; };
 
-        static_assert(std::is_default_constructible_v<Result> || std::is_same_v<Result, void>,
-                      "Result type should be default constructible or void");
-
-        template<typename T>
+    namespace detail {
+        template<typename Arg, typename Result, typename O, typename T>
             requires RttiAwareProxy<T>
-        Result operator()(T &&op) const {
-            if constexpr (!std::is_same_v<Result, void>) {
-                Result result;
-                try_invoke(&result, static_cast<F>(*this), op);
-                (try_invoke(&result, static_cast<Fs>(*this), op), ...);
-                return result;
-            } else {
-                try_invoke_void(static_cast<F>(*this), op);
-                (try_invoke_void(static_cast<Fs>(*this), op), ...);
-            }
-        }
-
-        template<typename O, typename T>
-            requires(RttiAwareProxy<T> && !std::is_same_v<Result, void>)
-        void try_invoke(Result *res, O &&f, T &&op) const {
+        void try_invoke(Result *res, O &&f, T &&op) {
             auto type_hash = proxy_typeid(op).hash_code();
-            using Arg = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<O>::args_type>>;
             if (typeid(Arg).hash_code() == type_hash) {
                 *res = f(proxy_cast<Arg>(op));
             }
         }
 
-        template<typename O, typename T>
+        template<typename Arg, typename O, typename T>
             requires RttiAwareProxy<T>
-        void try_invoke_void(O &&f, T &&op) const {
+        void try_invoke_void(O &&f, T &&op) {
             auto type_hash = proxy_typeid(op).hash_code();
-            using Arg = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<O>::args_type>>;
             if (typeid(Arg).hash_code() == type_hash) {
                 f(proxy_cast<Arg>(op));
             }
         }
+
+        template<typename M, RttiAwareProxy P, std::size_t... Indices>
+        typename M::Result visitImpl(M &&m, P &&ptr, std::index_sequence<Indices...>) {
+            using PackArgs = typename M::CandidateArgs;
+            if constexpr (std::is_same_v<typename M::Result, void>) {
+                (try_invoke_void<std::tuple_element_t<Indices, PackArgs>>(m, std::forward<P>(ptr)), ...);
+            } else {
+                typename M::Result result;
+                (try_invoke<std::tuple_element_t<Indices, PackArgs>>(&result, m, std::forward<P>(ptr)), ...);
+                return result;
+            }
+        }
+    } // namespace detail
+
+    // TODO: keep const qualifier
+    template<typename M, RttiAwareProxy P>
+    typename M::Result visit(const M &m, P &&ptr) {
+        constexpr auto size = std::tuple_size_v<typename M::CandidateArgs>;
+        return detail::visitImpl(std::move(m), ptr, std::make_index_sequence<size>{});
+    }
+
+    template<typename... Fs>
+    struct Matcher : Fs... {
+        using Result = typename function_traits<PackIndex<0, Fs...>>::result_type;
+        using CandidateArgs =
+                std::tuple<std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<Fs>::args_type>>...>;
+        using Fs::operator()...;
+
+        static_assert((std::is_same_v<Result, typename function_traits<Fs>::result_type> && ...),
+                      "Result type mismatch");
     };
 
     template<typename... Fs>
     Matcher(Fs...) -> Matcher<Fs...>;
-
-    template<typename... Fs>
-    struct VariantVisitor : Fs... {
-        using Fs::operator()...;
-    };
-
-    template<typename... Fs>
-    VariantVisitor(Fs...) -> VariantVisitor<Fs...>;
 
 } // namespace TinyCobalt
 

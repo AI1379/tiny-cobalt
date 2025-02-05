@@ -43,13 +43,13 @@ TEST(Common, MatcherVoidTest1) {
                          [&](double *) { type = Type::Double; }, // NOLINT
                          [&](std::string *) { type = Type::String; }};
     RttiProxy ptr = &i;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::Int);
     ptr = &d;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::Double);
     ptr = &s;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::String);
 }
 
@@ -70,22 +70,22 @@ TEST(Common, MatcherVoidTest2) {
             [&](std::unique_ptr<std::string>) { type = Type::StringUniquePtr; }, // NOLINT
     };
     RttiProxy ptr = &i;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::IntRawPtr);
     ptr = &d;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::DoubleRawPtr);
     ptr = &s;
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::StringRawPtr);
     ptr = std::make_shared<int>(i);
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::IntSharedPtr);
     ptr = std::make_shared<double>(d);
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::DoubleSharedPtr);
     ptr = std::make_shared<std::string>(s);
-    match(ptr);
+    visit(match, ptr);
     EXPECT_EQ(type, Type::StringSharedPtr);
 }
 
@@ -98,13 +98,13 @@ TEST(Common, MatcherNotVoidTest1) {
                          [](double *) -> Type { return Type::Double; }, // NOLINT
                          [](std::string *) -> Type { return Type::String; }};
     RttiProxy ptr = &i;
-    type = match(ptr);
+    type = visit(match, ptr);
     EXPECT_EQ(type, Type::Int);
     ptr = &d;
-    type = match(ptr);
+    type = visit(match, ptr);
     EXPECT_EQ(type, Type::Double);
     ptr = &s;
-    type = match(ptr);
+    type = visit(match, ptr);
     EXPECT_EQ(type, Type::String);
 }
 
@@ -116,11 +116,11 @@ TEST(Common, MatcherNotVoidTest2) {
                          [](double *d) { return std::format("{}", *d); }, // NOLINT
                          [](std::string *s) { return std::format("{}", *s); }}; // NOLINT
     RttiProxy ptr = &i;
-    EXPECT_EQ(match(ptr), "114");
+    EXPECT_EQ(visit(match, ptr), "114");
     ptr = &d;
-    EXPECT_EQ(match(ptr), "5.14");
+    EXPECT_EQ(visit(match, ptr), "5.14");
     ptr = &s;
-    EXPECT_EQ(match(ptr), "Elysia");
+    EXPECT_EQ(visit(match, ptr), "Elysia");
 }
 
 TEST(Common, MatcherConstTest1) {
@@ -129,7 +129,26 @@ TEST(Common, MatcherConstTest1) {
     auto match = Matcher{[](std::string *s) { return *s; }, // NOLINT
                          [](const std::string *s) { return *s; }}; // NOLINT
     RttiProxy ptr = &s;
-    EXPECT_EQ(match(ptr), s);
+    EXPECT_EQ(visit(match, ptr), s);
     ptr = &cs;
-    EXPECT_EQ(match(ptr), cs);
+    EXPECT_EQ(visit(match, ptr), cs);
+}
+
+TEST(Common, MatcherFunctorTest1) {
+    struct Functor {
+        using Result = std::string;
+        using CandidateArgs = std::tuple<int *, double *, std::string *>;
+        std::string operator()(int *i) const { return std::format("{}", *i); }
+        std::string operator()(double *d) const { return std::format("{}", *d); }
+        std::string operator()(const std::string *s) const { return *s; }
+    };
+    int i = 114;
+    double d = 5.14;
+    std::string s = "Elysia";
+    RttiProxy ptr = &i;
+    EXPECT_EQ(visit(Functor{}, ptr), "114");
+    ptr = &d;
+    EXPECT_EQ(visit(Functor{}, ptr), "5.14");
+    ptr = &s;
+    EXPECT_EQ(visit(Functor{}, ptr), "Elysia");
 }
