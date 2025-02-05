@@ -331,36 +331,55 @@ namespace TinyCobalt {
         { proxy_typeid(*proxy) } -> std::same_as<const std::type_info &>;
     };
 
+
+    // FIXME: Failed to handle unique_ptr
     template<typename F, typename... Fs>
         requires(std::is_same_v<typename function_traits<F>::result_type, // NOLINT
                                 typename function_traits<Fs>::result_type> &&
                  ...)
     struct Matcher : F, Fs... {
-        Matcher() = default;
-
         using Result = typename function_traits<F>::result_type;
 
-        static_assert(std::is_default_constructible_v<Result>, "Result type should be default constructible");
+        static_assert(std::is_default_constructible_v<Result> || std::is_same_v<Result, void>,
+                      "Result type should be default constructible or void");
 
         template<typename T>
             requires RttiAwareProxy<T>
-        Result operator()(T op) const {
-            Result result;
-            try_invoke(result, static_cast<F>(*this), op);
-            (try_invoke(result, static_cast<Fs>(*this), op), ...);
-            return result;
+        Result operator()(T &&op) const {
+            if constexpr (!std::is_same_v<Result, void>) {
+                Result result;
+                try_invoke(&result, static_cast<F>(*this), op);
+                (try_invoke(&result, static_cast<Fs>(*this), op), ...);
+                return result;
+            } else {
+                try_invoke_void(static_cast<F>(*this), op);
+                (try_invoke_void(static_cast<Fs>(*this), op), ...);
+            }
+        }
+
+        template<typename O, typename T>
+            requires(RttiAwareProxy<T> && !std::is_same_v<Result, void>)
+        void try_invoke(Result *res, O &&f, T &&op) const {
+            auto type_hash = proxy_typeid(op).hash_code();
+            using Arg = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<O>::args_type>>;
+            if (typeid(Arg).hash_code() == type_hash) {
+                *res = f(proxy_cast<Arg>(op));
+            }
         }
 
         template<typename O, typename T>
             requires RttiAwareProxy<T>
-        void try_invoke(Result &res, O &&f, T op) const {
+        void try_invoke_void(O &&f, T &&op) const {
             auto type_hash = proxy_typeid(op).hash_code();
             using Arg = std::remove_cvref_t<std::tuple_element_t<0, typename function_traits<O>::args_type>>;
             if (typeid(Arg).hash_code() == type_hash) {
-                res = f(proxy_cast<Arg>(op));
+                f(proxy_cast<Arg>(op));
             }
         }
     };
+
+    template<typename... Fs>
+    Matcher(Fs...) -> Matcher<Fs...>;
 
 } // namespace TinyCobalt
 
