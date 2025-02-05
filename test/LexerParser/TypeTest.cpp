@@ -318,3 +318,36 @@ TEST(LexerParser, ComplexType5) {
     )"_json;
     EXPECT_EQ(expected, json);
 }
+
+TEST(LexerParser, ComplexType6) {
+    std::string input = R"(Array<int, 5> x;)";
+    INIT_TEST
+    Common::JSON expected = R"(
+    {
+        "type": "ASTRoot",
+        "children": [
+            {
+                "type": "VariableDef",
+                "type": {
+                    "type": "ComplexType",
+                    "template_name": "Array",
+                    "template_args": [
+                        {
+                            "type": "SimpleType",
+                            "name": "int"
+                        },
+                        {
+                            "type": "ConstExpr",
+                            "value": "5",
+                            "expr_type": "Int"
+                        }
+                    ]
+                },
+                "name": "x",
+                "init": null
+            }
+        ]
+    }
+    )"_json;
+    EXPECT_EQ(expected, json);
+}
