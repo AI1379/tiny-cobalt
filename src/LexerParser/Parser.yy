@@ -151,7 +151,7 @@ namespace TinyCobalt::LexerParser {
 
 %nterm <AST::TypeNodePtr> type;
 %nterm <std::vector<AST::TypeNodePtr>> types;
-%nterm <std::vector<std::variant<AST::TypeNodePtr, AST::ExprNodePtr>>> template_arguments;
+%nterm <std::vector<std::variant<AST::TypeNodePtr, AST::ConstExprPtr>>> template_arguments;
 
 // Expr
 %nterm <AST::ConstExprPtr> const_expr;
@@ -266,9 +266,9 @@ types:
 
 template_arguments:
   "<" type { $$ = {$2}; }
-| "<" expr { $$ = {$2}; }
+| "<" const_expr { $$ = {$2}; }
 | template_arguments "," type { $$ = std::move($1); $$.emplace_back($3); }
-| template_arguments "," expr { $$ = std::move($1); $$.emplace_back($3); }
+| template_arguments "," const_expr { $$ = std::move($1); $$.emplace_back($3); }
 
 const_expr:
   "int" { $$ = driver.allocNode<AST::ConstExprNode>($1, AST::ConstExprType::Int); }
