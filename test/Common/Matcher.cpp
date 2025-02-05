@@ -122,3 +122,14 @@ TEST(Common, MatcherNotVoidTest2) {
     ptr = &s;
     EXPECT_EQ(match(ptr), "Elysia");
 }
+
+TEST(Common, MatcherConstTest1) {
+    std::string s = "Elysia";
+    const std::string cs = "Const Elysia";
+    auto match = Matcher{[](std::string *s) { return *s; }, // NOLINT
+                         [](const std::string *s) { return *s; }}; // NOLINT
+    RttiProxy ptr = &s;
+    EXPECT_EQ(match(ptr), s);
+    ptr = &cs;
+    EXPECT_EQ(match(ptr), cs);
+}
