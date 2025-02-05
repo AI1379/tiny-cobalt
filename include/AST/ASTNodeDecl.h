@@ -93,19 +93,25 @@ namespace TinyCobalt::AST {
         const SimpleTypeNode Bool("bool");
         const SimpleTypeNode Char("char");
         const SimpleTypeNode Void("void");
-        inline SimpleTypePtr findType(const std::string &name) {
+        inline constexpr SimpleTypePtr findType(const std::string &name) {
+            static auto kIntPtr = std::make_shared<SimpleTypeNode>(Int);
+            static auto kUIntPtr = std::make_shared<SimpleTypeNode>(UInt);
+            static auto kFloatPtr = std::make_shared<SimpleTypeNode>(Float);
+            static auto kBoolPtr = std::make_shared<SimpleTypeNode>(Bool);
+            static auto kCharPtr = std::make_shared<SimpleTypeNode>(Char);
+            static auto kVoidPtr = std::make_shared<SimpleTypeNode>(Void);
             if (name == "int") {
-                return std::make_shared<SimpleTypeNode>(Int);
+                return kIntPtr;
             } else if (name == "uint") {
-                return std::make_shared<SimpleTypeNode>(UInt);
+                return kUIntPtr;
             } else if (name == "float") {
-                return std::make_shared<SimpleTypeNode>(Float);
+                return kFloatPtr;
             } else if (name == "bool") {
-                return std::make_shared<SimpleTypeNode>(Bool);
+                return kBoolPtr;
             } else if (name == "char") {
-                return std::make_shared<SimpleTypeNode>(Char);
+                return kCharPtr;
             } else if (name == "void") {
-                return std::make_shared<SimpleTypeNode>(Void);
+                return kVoidPtr;
             }
             return nullptr;
         }

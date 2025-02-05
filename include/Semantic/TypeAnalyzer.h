@@ -7,7 +7,6 @@
 
 #include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
-#include "AST/TypeNode.h"
 #include "Common/Assert.h"
 
 namespace TinyCobalt::Semantic {
@@ -16,7 +15,7 @@ namespace TinyCobalt::Semantic {
         AST::VisitorState afterSubtree(AST::ASTNodePtr node);
 
     private:
-#define REG_ANALYZE_NODE(Name, ...) AST::TypeNodePtr analyzeType(AST::Name##Ptr node);
+#define REG_ANALYZE_NODE(Name, ...) AST::VisitorState analyzeType(AST::Name##Ptr node);
         TINY_COBALT_AST_EXPR_NODES(REG_ANALYZE_NODE)
 #undef REG_ANALYZE_NODE
     };
