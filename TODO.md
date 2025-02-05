@@ -6,13 +6,14 @@
 - [x] AST
 - [x] Change the basis of ASTNodes from std::variant to pro::proxy
 - [x] Lexer and Parser with bison/yacc
+- [x] Implement a matcher for proxy types.
 - [ ] Better syntax error report.
 - [ ] Modularize the implementation of Lexer and Parser.
 - [ ] Implement ASTBuilder to build AST.
 - [ ] Check if declarations of AST nodes should be private.
 - [ ] Support function and operator overload.
 - [ ] Introduce C++20 module to enhance compile performance.
-- [ ] Implement a matcher for proxy types.
+- [ ] Separate implementation from header.
 
 ## Optimistic
 
