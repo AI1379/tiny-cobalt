@@ -25,14 +25,9 @@ namespace TinyCobalt::AST {
         using TypeDefPtr = std::variant<AST::AliasDefPtr, AST::StructDefPtr, AST::SimpleTypePtr, std::nullptr_t>;
         TypeDefPtr def = nullptr;
         explicit SimpleTypeNode(std::string name) : name(std::move(name)) {}
-        ASTNodeGen traverse() { co_yield nullptr; }
+        ASTNodeGen traverse();
         bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "SimpleType";
-            json["name"] = name;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct FuncTypeNode : public EnableThisPointer<FuncTypeNode> {
@@ -41,22 +36,9 @@ namespace TinyCobalt::AST {
         FuncTypeNode(TypeNodePtr returnType, std::vector<TypeNodePtr> paramTypes) :
             returnType(std::move(returnType)), paramTypes(std::move(paramTypes)) {}
         FuncTypeNode(TypeNodePtr returnType) : returnType(std::move(returnType)), paramTypes() {}
-        ASTNodeGen traverse() {
-            co_yield returnType;
-            for (auto &paramType: paramTypes)
-                co_yield paramType;
-        }
+        ASTNodeGen traverse();
         bool convertibleTo(const pro::proxy<TypeNodeProxy> &other) const { return false; }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "FuncType";
-            json["return_type"] = returnType->toJSON();
-            json["param_types"] = Common::JSON::array();
-            for (const auto &paramType: paramTypes) {
-                json["param_types"].push_back(paramType->toJSON());
-            }
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
     /**
      * We do not use C-style pointer and array. Instead, we decide to use a C++ template-like form to represent complex
@@ -115,35 +97,24 @@ namespace TinyCobalt::AST {
         const std::string value;
         const ConstExprType type;
         explicit ConstExprNode(std::string value, ConstExprType type) : value(value), type(type) {}
-        ASTNodeGen traverse() { co_return; }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "ConstExpr";
-            json["value"] = value;
-            json["expr_type"] = magic_enum::enum_name(type);
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct VariableNode : public EnableThisPointer<VariableNode> {
         const std::string name;
         VariableDefPtr def = nullptr;
         explicit VariableNode(std::string name) : name(std::move(name)) {}
-        ASTNodeGen traverse() { co_return; }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Variable";
-            json["name"] = name;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     // TODO: support infix for binary function like Haskell
@@ -153,42 +124,24 @@ namespace TinyCobalt::AST {
         ExprNodePtr rhs;
         explicit BinaryNode(ExprNodePtr lhs, BinaryOp op, ExprNodePtr rhs) :
             op(std::move(op)), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
-        // BinaryNode(const BinaryNode &) = default;
-        // BinaryNode &operator=(const BinaryNode &) = default;
-        ASTNodeGen traverse() {
-            co_yield lhs;
-            co_yield rhs;
-        }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Binary";
-            json["op"] = magic_enum::enum_name(op);
-            json["lhs"] = lhs->toJSON();
-            json["rhs"] = rhs->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct UnaryNode : public EnableThisPointer<UnaryNode> {
         const UnaryOp op;
         ExprNodePtr operand;
         explicit UnaryNode(UnaryOp op, ExprNodePtr operand) : op(std::move(op)), operand(std::move(operand)) {}
-        ASTNodeGen traverse() { co_yield operand; }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Unary";
-            json["op"] = magic_enum::enum_name(op);
-            json["operand"] = operand->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     // Operators with multiple params, for example, operator[].
@@ -199,27 +152,12 @@ namespace TinyCobalt::AST {
         std::vector<ExprNodePtr> operands;
         explicit MultiaryNode(MultiaryOp op, ExprNodePtr obj, std::vector<ExprNodePtr> operands = {}) :
             op(op), object(obj), operands(std::move(operands)) {}
-        ASTNodeGen traverse() {
-            co_yield object;
-            for (const auto &operand: operands) {
-                co_yield operand;
-            }
-        }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Multiary";
-            json["op"] = magic_enum::enum_name(op);
-            json["object"] = object->toJSON();
-            json["operands"] = Common::JSON::array();
-            for (const auto &operand: operands) {
-                json["operands"].push_back(operand->toJSON());
-            }
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct CastNode : public EnableThisPointer<CastNode> {
@@ -228,22 +166,12 @@ namespace TinyCobalt::AST {
         ExprNodePtr operand;
         explicit CastNode(CastType op, TypeNodePtr type, ExprNodePtr operand) :
             op(op), type(std::move(type)), operand(std::move(operand)) {}
-        ASTNodeGen traverse() {
-            co_yield type;
-            co_yield operand;
-        }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Cast";
-            json["op"] = magic_enum::enum_name(op);
-            json["cast_type"] = type->toJSON();
-            json["operand"] = operand->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     // Three way conditional operator
@@ -253,23 +181,12 @@ namespace TinyCobalt::AST {
         ExprNodePtr falseBranch;
         explicit ConditionNode(ExprNodePtr condition, ExprNodePtr trueBranch, ExprNodePtr falseBranch) :
             condition(std::move(condition)), trueBranch(std::move(trueBranch)), falseBranch(std::move(falseBranch)) {}
-        ASTNodeGen traverse() {
-            co_yield condition;
-            co_yield trueBranch;
-            co_yield falseBranch;
-        }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Condition";
-            json["condition"] = condition->toJSON();
-            json["true_branch"] = trueBranch->toJSON();
-            json["false_branch"] = falseBranch->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct MemberNode : public EnableThisPointer<MemberNode> {
@@ -278,19 +195,12 @@ namespace TinyCobalt::AST {
         std::string member;
         explicit MemberNode(ExprNodePtr object, BinaryOp op, std::string member) :
             object(std::move(object)), op(op), member(std::move(member)) {}
-        ASTNodeGen traverse() { co_yield object; }
+        ASTNodeGen traverse();
         TypeNodePtr &exprType() {
             static TypeNodePtr ptr_ = nullptr;
             return ptr_;
         }
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Member";
-            json["object"] = object->toJSON();
-            json["op"] = magic_enum::enum_name(op);
-            json["member"] = member;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     namespace BuiltInOperator {
@@ -306,39 +216,18 @@ namespace TinyCobalt::AST {
         const StmtNodePtr elseStmt;
         IfNode(ExprNodePtr condition, StmtNodePtr thenStmt, StmtNodePtr elseStmt) :
             condition(std::move(condition)), thenStmt(std::move(thenStmt)), elseStmt(std::move(elseStmt)) {}
-        ASTNodeGen traverse() {
-            co_yield condition;
-            co_yield thenStmt;
-            // TODO: check if nullptr check is necessary
-            co_yield elseStmt;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "If";
-            json["condition"] = condition->toJSON();
-            json["then_stmt"] = thenStmt->toJSON();
-            json["else_stmt"] = elseStmt ? elseStmt->toJSON() : nullptr;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct WhileNode : public EnableThisPointer<WhileNode> {
         const ExprNodePtr condition;
         const StmtNodePtr body;
         WhileNode(ExprNodePtr condition, StmtNodePtr body) : condition(std::move(condition)), body(std::move(body)) {}
-        ASTNodeGen traverse() {
-            co_yield condition;
-            co_yield body;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "While";
-            json["condition"] = condition->toJSON();
-            json["body"] = body->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct ForNode : public EnableThisPointer<ForNode> {
@@ -348,74 +237,37 @@ namespace TinyCobalt::AST {
         const StmtNodePtr body;
         ForNode(ExprNodePtr init, ExprNodePtr condition, ExprNodePtr step, StmtNodePtr body) :
             init(std::move(init)), condition(std::move(condition)), step(std::move(step)), body(std::move(body)) {}
-        ASTNodeGen traverse() {
-            co_yield init;
-            co_yield condition;
-            co_yield step;
-            co_yield body;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "For";
-            json["init"] = init->toJSON();
-            json["condition"] = condition->toJSON();
-            json["step"] = step->toJSON();
-            json["body"] = body->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct ReturnNode : public EnableThisPointer<ReturnNode> {
         const ExprNodePtr value;
         explicit ReturnNode(ExprNodePtr value) : value(std::move(value)) {}
-        ASTNodeGen traverse() { co_yield value; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Return";
-            json["value"] = value ? value->toJSON() : nullptr;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct BlockNode : public EnableThisPointer<BlockNode> {
         std::vector<StmtNodePtr> stmts;
         explicit BlockNode(std::vector<StmtNodePtr> stmts) : stmts(std::move(stmts)) {}
-        ASTNodeGen traverse() {
-            for (auto &stmt: stmts)
-                co_yield stmt;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Block";
-            json["stmts"] = Common::JSON::array();
-            for (const auto &stmt: stmts) {
-                json["stmts"].push_back(stmt->toJSON());
-            }
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct BreakNode : public EnableThisPointer<BreakNode> {
-        ASTNodeGen traverse() { co_yield nullptr; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Break";
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct ContinueNode : public EnableThisPointer<ContinueNode> {
-        ASTNodeGen traverse() { co_yield nullptr; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "Continue";
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct VariableDefNode : public EnableThisPointer<VariableDefNode> {
@@ -424,19 +276,9 @@ namespace TinyCobalt::AST {
         const ExprNodePtr init;
         VariableDefNode(TypeNodePtr type, std::string name, ExprNodePtr init = nullptr) :
             type(type), name(std::move(name)), init(init) {}
-        ASTNodeGen traverse() {
-            co_yield type;
-            co_yield init;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "VariableDef";
-            json["type"] = type->toJSON();
-            json["name"] = name;
-            json["init"] = init ? init->toJSON() : nullptr;
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct FuncDefNode : public EnableThisPointer<FuncDefNode> {
@@ -455,25 +297,9 @@ namespace TinyCobalt::AST {
         }
         FuncDefNode(TypeNodePtr returnType, std::string name, StmtNodePtr body) :
             returnType(std::move(returnType)), name(std::move(name)), params(), body(std::move(body)) {}
-        ASTNodeGen traverse() {
-            co_yield returnType;
-            for (auto &param: params)
-                co_yield param;
-            co_yield body;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "FuncDef";
-            json["return_type"] = returnType->toJSON();
-            json["name"] = name;
-            json["params"] = Common::JSON::array();
-            for (const auto &param: params) {
-                json["params"].push_back(param->toJSON());
-            }
-            json["body"] = body->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct StructDefNode : public EnableThisPointer<StructDefNode> {
@@ -488,60 +314,34 @@ namespace TinyCobalt::AST {
         StructDefNode(std::string name, std::vector<FieldsElem> fields) :
             name(std::move(name)), fields(std::move(fields)) {}
         explicit StructDefNode(std::string name) : name(std::move(name)), fields() {}
-        ASTNodeGen traverse() {
-            for (auto field: fields)
-                co_yield field;
-        }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "StructDef";
-            json["name"] = name;
-            json["fields"] = Common::JSON::array();
-            for (const auto &field: fields) {
-                json["fields"].push_back(field->toJSON());
-            }
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct AliasDefNode : public EnableThisPointer<AliasDefNode> {
         const std::string name;
         const TypeNodePtr type;
         AliasDefNode(std::string name, TypeNodePtr type) : name(std::move(name)), type(std::move(type)) {}
-        ASTNodeGen traverse() { co_yield type; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "AliasDef";
-            json["name"] = name;
-            json["type"] = type->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct ExprStmtNode : public EnableThisPointer<ExprStmtNode> {
         const ExprNodePtr expr;
         explicit ExprStmtNode(ExprNodePtr expr) : expr(std::move(expr)) {}
-        ASTNodeGen traverse() { co_yield expr; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "ExprStmt";
-            json["expr"] = expr->toJSON();
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
 
     struct EmptyStmtNode : public EnableThisPointer<EmptyStmtNode> {
-        ASTNodeGen traverse() { co_return; }
+        ASTNodeGen traverse();
         void stmtFlag() {}
-        Common::JSON toJSON() const {
-            Common::JSON json;
-            json["type"] = "EmptyStmt";
-            return json;
-        }
+        Common::JSON toJSON() const;
     };
+
 #define TYPE_NODE_ASSERT(Name, ...) TINY_COBALT_CONCEPT_ASSERT(TypeNodePtrConcept, Name##Ptr);
 
     TINY_COBALT_AST_TYPE_NODES(TYPE_NODE_ASSERT);
