@@ -7,6 +7,7 @@
 - [x] Change the basis of ASTNodes from std::variant to pro::proxy
 - [x] Lexer and Parser with bison/yacc
 - [x] Implement a matcher for proxy types.
+- [ ] Const qualifier for type.
 - [ ] Better syntax error report.
 - [ ] Modularize the implementation of Lexer and Parser.
 - [ ] Implement ASTBuilder to build AST.

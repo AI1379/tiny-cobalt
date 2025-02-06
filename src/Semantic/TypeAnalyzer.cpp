@@ -3,13 +3,28 @@
 //
 
 #include "Semantic/TypeAnalyzer.h"
+#include <memory>
 #include "AST/ASTNodeDecl.h"
 #include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
+#include "AST/TypeNode.h"
 #include "Common/Assert.h"
+#include "Common/Utility.h"
 
 namespace TinyCobalt::Semantic {
+    static auto kTemplateArgMatcher = Matcher{[](AST::TypeNodePtr node) { return node; },
+                                              [](AST::ConstExprPtr node) { return AST::TypeNodePtr{nullptr}; }};
+
+    AST::TypeNodePtr pointerTo(AST::TypeNodePtr ptr) {
+        if (proxy_typeid(ptr).hash_code() != typeid(AST::ComplexTypePtr).hash_code())
+            return nullptr;
+        auto cplx = proxy_cast<AST::ComplexTypePtr>(ptr);
+        if (cplx->templateName != "Pointer")
+            return nullptr;
+        return std::visit(kTemplateArgMatcher, cplx->templateArgs.front());
+    }
+
     AST::VisitorState TypeAnalyzer::afterSubtree(AST::ASTNodePtr node) {
         auto matcher = Matcher{
 #define REG_ANALYZER(Name, ...) [&](AST::Name##Ptr node) { return analyzeType(node); },
@@ -37,7 +52,8 @@ namespace TinyCobalt::Semantic {
                 break;
             }
             case AST::ConstExprType::String: {
-                // TODO: Implement string type
+                ptr->exprType() = std::make_shared<AST::ComplexTypeNode>(
+                        "Pointer", std::vector{AST::BuiltInType::findType("char")});
                 break;
             }
             case AST::ConstExprType::Char: {
@@ -69,7 +85,7 @@ namespace TinyCobalt::Semantic {
             case AST::BinaryOp::BitLShift:
             case AST::BinaryOp::BitRShift: {
                 // TODO: unsigned int support
-                ptr->exprType() = std::make_shared<AST::SimpleTypeNode>("int");
+                ptr->exprType() = AST::BuiltInType::findType("int");
                 break;
             }
             case AST::BinaryOp::And:
@@ -80,7 +96,7 @@ namespace TinyCobalt::Semantic {
             case AST::BinaryOp::Greater:
             case AST::BinaryOp::Leq:
             case AST::BinaryOp::Geq: {
-                ptr->exprType() = std::make_shared<AST::SimpleTypeNode>("bool");
+                ptr->exprType() = AST::BuiltInType::findType("bool");
                 break;
             }
             case AST::BinaryOp::Assign:
@@ -121,11 +137,13 @@ namespace TinyCobalt::Semantic {
                 ptr->exprType() = AST::BuiltInType::findType("bool");
                 break;
             }
-            // TODO: implement this
             case AST::UnaryOp::Addr: {
+                ptr->exprType() = pointerTo(ptr->operand->exprType());
                 break;
             }
             case AST::UnaryOp::Deref: {
+                auto t = ptr->operand->exprType();
+                ptr->exprType() = std::make_shared<AST::ComplexTypeNode>("Pointer", std::vector{t});
                 break;
             }
         }
@@ -135,14 +153,22 @@ namespace TinyCobalt::Semantic {
     AST::VisitorState TypeAnalyzer::analyzeType(AST::MultiaryPtr ptr) {
         switch (ptr->op) {
             case AST::MultiaryOp::Subscript: {
-                // TODO: Implement type analyzer for subscript
+                // TODO: Implement type analyzer for subscript overload
+                auto def = ptr->object->exprType();
+                TINY_COBALT_ASSERT(ptr->operands.size() == 1 && pointerType<AST::ConstExprPtr>(ptr->operands.front()),
+                                   "Invalid subscript");
+                TINY_COBALT_ASSERT(pointerType<AST::ComplexTypePtr>(def), "Not a pointer or array");
+                auto cplx = proxy_cast<AST::ComplexTypePtr>(def);
+                TINY_COBALT_ASSERT(cplx->templateName == "Pointer" || cplx->templateName == "Array",
+                                   "Not a pointer or array");
+                ptr->exprType() = std::visit(kTemplateArgMatcher, cplx->templateArgs.front());
+                TINY_COBALT_ASSERT(ptr->exprType(), "Invalid subscript");
                 break;
             }
             case AST::MultiaryOp::FuncCall: {
                 // TODO: Overloaded function
                 auto def = ptr->object->exprType();
-                TINY_COBALT_ASSERT(proxy_typeid(def).hash_code() == typeid(AST::FuncDefPtr).hash_code(),
-                                   "Not a function");
+                TINY_COBALT_ASSERT(pointerType<AST::FuncDefPtr>(def), "Not a function");
                 auto func_def = proxy_cast<AST::FuncDefPtr>(def);
                 ptr->exprType() = func_def->returnType;
                 break;

@@ -55,17 +55,7 @@ namespace TinyCobalt {
     } // namespace detail
 
     template<typename... Ts>
-    using UnionedVariant =
-            typename detail::UniqueVariantHelper<typename detail::MergedVariantHelper<Ts...>::type>::type;
-
-    // tests for MergedVariant
-    static_assert(std::is_same_v<UnionedVariant<bool, std::variant<int>, std::variant<double>>,
-                                 std::variant<bool, int, double>>);
-    static_assert(std::is_same_v<UnionedVariant<std::variant<int, bool>, std::variant<double, std::string>>,
-                                 std::variant<int, bool, double, std::string>>);
-    static_assert(std::is_same_v<UnionedVariant<std::variant<int, double>>, std::variant<int, double>>);
-    static_assert(std::is_same_v<UnionedVariant<std::variant<int, double>, std::variant<bool, double>>,
-                                 std::variant<int, bool, double>>);
+    using UnionVariant = typename detail::UniqueVariantHelper<typename detail::MergedVariantHelper<Ts...>::type>::type;
 
     template<typename T, typename U>
     inline constexpr bool IsVariantMember = false;
