@@ -18,7 +18,7 @@ namespace TinyCobalt::Semantic {
 
     class DeclMatcher : AST::BaseASTVisitorMiddleware<DeclMatcher> {
     public:
-        DeclMatcher() { pushScope(); }
+        DeclMatcher() { pushScope("<root>"); }
 
         ~DeclMatcher() {
             delete current_alias_;
