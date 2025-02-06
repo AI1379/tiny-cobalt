@@ -16,20 +16,15 @@
 
 namespace TinyCobalt::Semantic {
 
-    class DeclMatcher : AST::BaseASTVisitorMiddleware<DeclMatcher> {
+    class DeclMatcher : public AST::BaseASTVisitorMiddleware<DeclMatcher> {
     public:
         DeclMatcher() { pushScope("<root>"); }
 
-        ~DeclMatcher() {
-            delete current_alias_;
-            delete current_func_;
-            delete current_variable_;
-            delete current_struct_;
-        }
+        ~DeclMatcher() {}
 
-        AST::VisitorState beforeSubtree(AST::ASTNodePtr node);
-        AST::VisitorState beforeChild(AST::ASTNodePtr node, AST::ASTNodePtr child);
-        AST::VisitorState afterChild(AST::ASTNodePtr node, AST::ASTNodePtr child);
+        AST::VisitorState beforeSubtreeImpl(AST::ASTNodePtr node);
+        AST::VisitorState beforeChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
+        AST::VisitorState afterChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
 
     private:
         using FuncScope = Scope<std::string, AST::FuncDefPtr>;
@@ -45,10 +40,10 @@ namespace TinyCobalt::Semantic {
 
         TypeDefPtr findType(const std::string &name);
 
-        Scope<std::string, AST::FuncDefPtr> *current_func_ = nullptr;
-        Scope<std::string, AST::VariableDefPtr> *current_variable_ = nullptr;
-        Scope<std::string, AST::AliasDefPtr> *current_alias_ = nullptr;
-        Scope<std::string, AST::StructDefPtr> *current_struct_ = nullptr;
+        std::shared_ptr<FuncScope> current_func_ = nullptr;
+        std::shared_ptr<VariableScope> current_variable_ = nullptr;
+        std::shared_ptr<AliasScope> current_alias_ = nullptr;
+        std::shared_ptr<StructScope> current_struct_ = nullptr;
 
         void tryAddSymbol(AST::FuncDefPtr ptr);
         void tryAddSymbol(AST::VariableDefPtr ptr);

@@ -11,10 +11,8 @@
 
 namespace TinyCobalt::Semantic {
     class TypeAnalyzer : public AST::BaseASTVisitorMiddleware<TypeAnalyzer> {
-    public:
-        AST::VisitorState afterSubtree(AST::ASTNodePtr node);
+        AST::VisitorState afterSubtreeImpl(AST::ASTNodePtr node);
 
-    private:
 #define REG_ANALYZE_NODE(Name, ...) AST::VisitorState analyzeType(AST::Name##Ptr node);
         TINY_COBALT_AST_EXPR_NODES(REG_ANALYZE_NODE)
 #undef REG_ANALYZE_NODE

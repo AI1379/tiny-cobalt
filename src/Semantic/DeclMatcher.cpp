@@ -49,17 +49,18 @@ namespace TinyCobalt::Semantic {
     }
 
 
-    AST::VisitorState DeclMatcher::beforeSubtree(AST::ASTNodePtr node) {
+    AST::VisitorState DeclMatcher::beforeSubtreeImpl(AST::ASTNodePtr node) {
         auto matcher = Matcher{[&](AST::FuncDefPtr ptr) { tryAddSymbol(ptr); },
                                [&](AST::VariableDefPtr ptr) { tryAddSymbol(ptr); },
                                [&](AST::AliasDefPtr ptr) { tryAddSymbol(ptr); },
                                [&](AST::StructDefPtr ptr) { tryAddSymbol(ptr); },
                                [&](AST::VariablePtr ptr) { ptr->def = current_variable_->getSymbol(ptr->name); },
                                [&](AST::SimpleTypePtr ptr) { ptr->def = findType(ptr->name); }};
+        visit(matcher, node);
         return AST::VisitorState::Normal;
     }
 
-    AST::VisitorState DeclMatcher::beforeChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
+    AST::VisitorState DeclMatcher::beforeChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child) {
         size_t type_hash = proxy_typeid(child).hash_code();
         if (type_hash == typeid(AST::BlockPtr).hash_code()) {
             auto name = kDefaultScopeName;
@@ -71,7 +72,7 @@ namespace TinyCobalt::Semantic {
         return AST::VisitorState::Normal;
     }
 
-    AST::VisitorState DeclMatcher::afterChild(AST::ASTNodePtr node, AST::ASTNodePtr child) {
+    AST::VisitorState DeclMatcher::afterChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child) {
         size_t type_hash = proxy_typeid(node).hash_code();
         if (type_hash == typeid(AST::BlockPtr).hash_code()) {
             popScope();
@@ -90,25 +91,19 @@ namespace TinyCobalt::Semantic {
         return nullptr;
     }
 
+    // FIXME: MEMORY LEAK!
+    // It may be necessary to refactor the Scope with the type of parent set to std::unique_ptr<Scope>.
     void DeclMatcher::pushScope(const std::string &name) {
-        current_alias_ = new AliasScope(current_alias_, name);
-        current_func_ = new FuncScope(current_func_, name);
-        current_variable_ = new VariableScope(current_variable_, name);
-        current_struct_ = new StructScope(current_struct_, name);
+        current_alias_ = std::make_shared<AliasScope>(current_alias_.get(), name);
+        current_func_ = std::make_shared<FuncScope>(current_func_.get(), name);
+        current_variable_ = std::make_shared<VariableScope>(current_variable_.get(), name);
+        current_struct_ = std::make_shared<StructScope>(current_struct_.get(), name);
     }
 
     void DeclMatcher::popScope() {
-        auto alias = current_alias_;
-        current_alias_ = alias->getParent();
-        delete alias;
-        auto func = current_func_;
-        current_func_ = func->getParent();
-        delete func;
-        auto variable = current_variable_;
-        current_variable_ = variable->getParent();
-        delete variable;
-        auto struc = current_struct_;
-        current_struct_ = struc->getParent();
-        delete struc;
+        current_alias_ = current_alias_->getParent()->shared_from_this();
+        current_func_ = current_func_->getParent()->shared_from_this();
+        current_variable_ = current_variable_->getParent()->shared_from_this();
+        current_struct_ = current_struct_->getParent()->shared_from_this();
     }
 } // namespace TinyCobalt::Semantic

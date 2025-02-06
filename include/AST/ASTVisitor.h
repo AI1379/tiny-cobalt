@@ -33,11 +33,10 @@ namespace TinyCobalt::AST {
 
     struct ASTVisitorMiddlewareProxy // NOLINT
         : pro::facade_builder // NOLINT
-          ::add_convention<pro::weak_dispatch<MemBeforeSubtree>, VisitorState(ASTNodePtr)> // NOLINT
-          ::add_convention<pro::weak_dispatch<MemAfterSubtree>, VisitorState(ASTNodePtr)> // NOLINT
-          ::add_convention<pro::weak_dispatch<MemBeforeChild>, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
-          ::add_convention<pro::weak_dispatch<MemAfterChild>, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
-          ::add_reflection<WeakImplementedRefl<ASTVisitorMiddlewareProxy>> // NOLINT
+          ::add_convention<MemBeforeSubtree, VisitorState(ASTNodePtr)> // NOLINT
+          ::add_convention<MemAfterSubtree, VisitorState(ASTNodePtr)> // NOLINT
+          ::add_convention<MemBeforeChild, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
+          ::add_convention<MemAfterChild, VisitorState(ASTNodePtr, ASTNodePtr)> // NOLINT
           ::build {};
 
     template<typename T>
@@ -53,9 +52,9 @@ namespace TinyCobalt::AST {
         // INTERFACES
         VisitorState beforeSubtree(this Middleware self, ASTNodePtr node) {
             if constexpr (requires(Middleware M) {
-                              { M.beforeSubtree(node) } -> std::same_as<VisitorState>;
+                              { M.beforeSubtreeImpl(node) } -> std::same_as<VisitorState>;
                           }) {
-                return self.beforeSubtree(node);
+                return self.beforeSubtreeImpl(node);
             } else {
                 return VisitorState::Normal;
             }
@@ -63,9 +62,9 @@ namespace TinyCobalt::AST {
 
         VisitorState afterSubtree(this Middleware self, ASTNodePtr node) {
             if constexpr (requires(Middleware M) {
-                              { M.afterSubtree(node) } -> std::same_as<VisitorState>;
+                              { M.afterSubtreeImpl(node) } -> std::same_as<VisitorState>;
                           }) {
-                return self.afterSubtree(node);
+                return self.afterSubtreeImpl(node);
             } else {
                 return VisitorState::Normal;
             }
@@ -73,9 +72,9 @@ namespace TinyCobalt::AST {
 
         VisitorState beforeChild(this Middleware self, ASTNodePtr node, ASTNodePtr child) {
             if constexpr (requires(Middleware M) {
-                              { M.beforeChild(node, child) } -> std::same_as<VisitorState>;
+                              { M.beforeChildImpl(node, child) } -> std::same_as<VisitorState>;
                           }) {
-                return self.beforeChild(node, child);
+                return self.beforeChildImpl(node, child);
             } else {
                 return VisitorState::Normal;
             }
@@ -83,13 +82,15 @@ namespace TinyCobalt::AST {
 
         VisitorState afterChild(this Middleware self, ASTNodePtr node, ASTNodePtr child) {
             if constexpr (requires(Middleware M) {
-                              { M.afterChild(node, child) } -> std::same_as<VisitorState>;
+                              { M.afterChildImpl(node, child) } -> std::same_as<VisitorState>;
                           }) {
-                return self.afterChild(node, child);
+                return self.afterChildImpl(node, child);
             } else {
                 return VisitorState::Normal;
             }
         }
+
+        friend Middleware;
     };
 
     struct ASTVisitorProxy // NOLINT
@@ -129,7 +130,7 @@ namespace TinyCobalt::AST {
                     default:
                         break;
                 }
-                if (middleware_.visit(child) == VisitorState::Exit) {
+                if (this->visit(child) == VisitorState::Exit) {
                     return VisitorState::Exit;
                 }
                 switch (middleware_.afterChild(node, child)) {
@@ -153,7 +154,7 @@ namespace TinyCobalt::AST {
         }
 
     private:
-        Middleware middleware_;
+        Middleware middleware_{};
     };
 
 } // namespace TinyCobalt::AST

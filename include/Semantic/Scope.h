@@ -6,6 +6,7 @@
 #define TINY_COBALT_INCLUDE_SEMANTIC_SCOPE_H_
 
 #include <format>
+#include <memory>
 #include <optional>
 #include <string>
 #include "AST/AST.h"
@@ -20,7 +21,7 @@ namespace TinyCobalt::Semantic {
      * A class to represent a scope in the program.
      */
     template<typename Key, typename Value>
-    class Scope {
+    class Scope : public std::enable_shared_from_this<Scope<Key, Value>> {
     public:
         Scope(Scope *parent = nullptr, const std::string &name = kDefaultScopeName) : parent_(parent), name_(name) {}
 
@@ -102,7 +103,7 @@ namespace TinyCobalt::Semantic {
     };
 
     template<typename Key, PointerLike Value>
-    class Scope<Key, Value> {
+    class Scope<Key, Value> : public std::enable_shared_from_this<Scope<Key, Value>> {
     public:
         Scope(Scope *parent = nullptr, const std::string &name = kDefaultScopeName) : parent_(parent), name_(name) {}
 

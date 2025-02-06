@@ -25,7 +25,7 @@ namespace TinyCobalt::Semantic {
         return std::visit(kTemplateArgMatcher, cplx->templateArgs.front());
     }
 
-    AST::VisitorState TypeAnalyzer::afterSubtree(AST::ASTNodePtr node) {
+    AST::VisitorState TypeAnalyzer::afterSubtreeImpl(AST::ASTNodePtr node) {
         auto matcher = Matcher{
 #define REG_ANALYZER(Name, ...) [&](AST::Name##Ptr node) { return analyzeType(node); },
                 TINY_COBALT_AST_EXPR_NODES(REG_ANALYZER)
