@@ -20,12 +20,19 @@
 #include <utility>
 #include <variant>
 
+#if __cpp_lib_generator >= 202207L
+#include <generator>
+#endif
+
 #include "Common/Range.h"
 
 namespace TinyCobalt::Utility {
+#if __cpp_lib_generator >= 202207L
+    template<typename Ref, typename V = void, typename Alloc = void>
+    using generator = std::generator<Ref, V, Alloc>;
+#else
     // This is a implementation of std::generator in C++20 because libc++ does not support it yet.
     // This implementation is based on libstdc++'s implementation.
-
     template<typename Ref, typename Val = void, typename Alloc = void>
     class Generator;
 
@@ -405,9 +412,7 @@ namespace TinyCobalt::Utility {
         public:
             void *operator new(std::size_t sz) {
                 auto nsz = alloc_size<void>(sz);
-                DeallocFunc d = [](void *ptr, std::size_t sz) {
-                    ::operator delete(ptr, alloc_size<void>(sz));
-                };
+                DeallocFunc d = [](void *ptr, std::size_t sz) { ::operator delete(ptr, alloc_size<void>(sz)); };
                 auto p = ::operator new(nsz);
                 auto pn = reinterpret_cast<std::uintptr_t>(p);
                 *dealloc_address(pn, sz) = d;
@@ -559,7 +564,7 @@ namespace TinyCobalt::Utility {
 
     template<typename Ref, typename Val = void, typename Alloc = void>
     using generator = Generator<Ref, Val, Alloc>;
-
+#endif
 } // namespace TinyCobalt::Utility
 
 #endif // TINY_COBALT_INCLUDE_COMMON_GENERATOR_H_

@@ -18,7 +18,7 @@ namespace TinyCobalt::Semantic {
     /**
      * A class to perform semantic analysis on the AST.
      */
-    using SemanticAnalyzer = AST::BaseASTVisitor<detail::SemanticAnalyzerMiddleware>;
+    // using SemanticAnalyzer = AST::BaseASTVisitor<detail::SemanticAnalyzerMiddleware>;
 
 } // namespace TinyCobalt::Semantic
 

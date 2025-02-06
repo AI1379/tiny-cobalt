@@ -8,8 +8,10 @@
 #include <concepts>
 #include <cstddef>
 #include <memory>
-#include <range/v3/view/zip.hpp>
 #include <ranges>
+#if __cpp_lib_ranges_zip < 202110L
+#include <range/v3/view/zip.hpp>
+#endif
 
 namespace TinyCobalt {
     namespace Ranges {
