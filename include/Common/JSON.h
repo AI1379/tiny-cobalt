@@ -5,8 +5,10 @@
 #ifndef TINY_COBALT_INCLUDE_COMMON_JSON_H_
 #define TINY_COBALT_INCLUDE_COMMON_JSON_H_
 
+#include <concepts>
 #include <nlohmann/json.hpp>
 #include <proxy.h>
+#include <utility>
 
 namespace TinyCobalt::Common {
     using JSON = nlohmann::json;
@@ -18,8 +20,18 @@ namespace TinyCobalt::Common {
           ::add_convention<MemToJSON, JSON() const> // NOLINT
           ::build {};
 
+    // Interface for json deserialization
+    template<typename T>
+    T fromJSON(const Common::JSON &obj);
+
     template<typename T>
     concept ToJSONConcept = pro::proxiable<T *, ToJSONProxy>;
+
+    template<typename T>
+    concept JSONSerializable = requires(T obj) {
+        { obj.toJSON() } -> std::same_as<JSON>;
+        { fromJSON<T>(std::declval<JSON>()) } -> std::same_as<T>;
+    };
 
 } // namespace TinyCobalt::Common
 
