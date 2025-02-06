@@ -29,7 +29,7 @@ TEST(LexerParser, FuncType1) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "FuncType",
                     "return_type": {
                         "type": "SimpleType",
@@ -64,7 +64,7 @@ TEST(LexerParser, FuncType2) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "FuncType",
                     "return_type": {
                         "type": "SimpleType",
@@ -103,7 +103,7 @@ TEST(LexerParser, FuncType3) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "FuncType",
                     "return_type": {
                         "type": "SimpleType",
@@ -129,7 +129,7 @@ TEST(LexerParser, ComplexType1) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "ComplexType",
                     "template_name": "Pointer",
                     "template_args": [{
@@ -155,7 +155,7 @@ TEST(LexerParser, ComplexType2) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "ComplexType",
                     "template_name": "Map",
                     "template_args": [
@@ -197,7 +197,7 @@ TEST(LexerParser, ComplexType3) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "ComplexType",
                     "template_name": "Map",
                     "template_args": [
@@ -244,7 +244,7 @@ TEST(LexerParser, ComplexType4) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "FuncType",
                     "return_type": {
                         "type": "ComplexType",
@@ -276,7 +276,7 @@ TEST(LexerParser, ComplexType5) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "ComplexType",
                     "template_name": "Tuple",
                     "template_args": [
@@ -328,7 +328,7 @@ TEST(LexerParser, ComplexType6) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "ComplexType",
                     "template_name": "Array",
                     "template_args": [

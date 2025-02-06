@@ -424,7 +424,7 @@ TEST(LexerParser, VariableDefStmt1) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "SimpleType",
                     "name": "int"
                 },
@@ -446,7 +446,7 @@ TEST(LexerParser, VariableDefStmt2) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "SimpleType",
                     "name": "int"
                 },
@@ -472,7 +472,7 @@ TEST(LexerParser, VariableDefStmt3) {
         "children": [
             {
                 "type": "VariableDef",
-                "type": {
+                "type_node": {
                     "type": "SimpleType",
                     "name": "int"
                 },
@@ -546,7 +546,7 @@ TEST(LexerParser, StructDefStmt1) {
                 "fields": [
                     {
                         "type": "VariableDef",
-                        "type": {
+                        "type_node": {
                             "type": "SimpleType",
                             "name": "int"
                         },
@@ -555,7 +555,7 @@ TEST(LexerParser, StructDefStmt1) {
                     },
                     {
                         "type": "VariableDef",
-                        "type": {
+                        "type_node": {
                             "type": "SimpleType",
                             "name": "int"
                         },

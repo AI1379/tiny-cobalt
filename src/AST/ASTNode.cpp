@@ -259,7 +259,7 @@ namespace TinyCobalt::AST {
     Common::JSON VariableDefNode::toJSON() const {
         Common::JSON json;
         json["type"] = "VariableDef";
-        json["type"] = type->toJSON();
+        json["type_node"] = type->toJSON();
         json["name"] = name;
         json["init"] = init ? init->toJSON() : nullptr;
         return json;

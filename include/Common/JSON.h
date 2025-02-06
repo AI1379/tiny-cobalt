@@ -33,6 +33,9 @@ namespace TinyCobalt::Common {
         { fromJSON<T>(std::declval<JSON>()) } -> std::same_as<T>;
     };
 
+    using nlohmann::operator""_json;
+    using nlohmann::operator""_json_pointer;
+
 } // namespace TinyCobalt::Common
 
 #endif // TINY_COBALT_INCLUDE_COMMON_JSON_H_

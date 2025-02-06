@@ -53,7 +53,8 @@ namespace TinyCobalt::Semantic {
             }
             case AST::ConstExprType::String: {
                 ptr->exprType() = std::make_shared<AST::ComplexTypeNode>(
-                        "Pointer", std::vector{AST::BuiltInType::findType("char")});
+                        "Pointer",
+                        std::vector{AST::ComplexTypeNode::TemplateArgType(AST::BuiltInType::findType("char"))});
                 break;
             }
             case AST::ConstExprType::Char: {
@@ -143,7 +144,8 @@ namespace TinyCobalt::Semantic {
             }
             case AST::UnaryOp::Deref: {
                 auto t = ptr->operand->exprType();
-                ptr->exprType() = std::make_shared<AST::ComplexTypeNode>("Pointer", std::vector{t});
+                ptr->exprType() = std::make_shared<AST::ComplexTypeNode>(
+                        "Pointer", std::vector{AST::ComplexTypeNode::TemplateArgType(t)});
                 break;
             }
         }
