@@ -26,8 +26,7 @@ namespace TinyCobalt::Semantic {
         DeclMatcher(DeclMatcher &&) = default;
 
         AST::VisitorState beforeSubtreeImpl(AST::ASTNodePtr node);
-        AST::VisitorState beforeChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
-        AST::VisitorState afterChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
+        AST::VisitorState afterSubtreeImpl(AST::ASTNodePtr node);
 
     private:
         using FuncScope = Scope<std::string, AST::FuncDefPtr>;

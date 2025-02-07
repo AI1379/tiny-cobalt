@@ -3,11 +3,13 @@
 //
 
 #include "Semantic/DeclMatcher.h"
+#include "AST/ASTNode.h"
 #include "AST/ASTVisitor.h"
 #include "AST/ExprNode.h"
 #include "AST/StmtNode.h"
 #include "AST/TypeNode.h"
 #include "Common/Utility.h"
+#include "Semantic/Scope.h"
 
 namespace TinyCobalt::Semantic {
 
@@ -50,36 +52,34 @@ namespace TinyCobalt::Semantic {
 
 
     AST::VisitorState DeclMatcher::beforeSubtreeImpl(AST::ASTNodePtr node) {
-        auto matcher = Matcher{[&](AST::FuncDefPtr ptr) { tryAddSymbol(ptr); },
-                               [&](AST::VariableDefPtr ptr) { tryAddSymbol(ptr); },
-                               [&](AST::AliasDefPtr ptr) { tryAddSymbol(ptr); },
-                               [&](AST::StructDefPtr ptr) { tryAddSymbol(ptr); },
-                               [&](AST::VariablePtr ptr) { ptr->def = current_variable_->getSymbol(ptr->name); },
-                               [&](AST::SimpleTypePtr ptr) { ptr->def = findType(ptr->name); }};
+        static std::string next_scope_name_ = kDefaultScopeName;
+        // TODO: Function def find.
+        auto matcher = Matcher{
+                [&](AST::VariableDefPtr ptr) { tryAddSymbol(ptr); },
+                [&](AST::AliasDefPtr ptr) { tryAddSymbol(ptr); },
+                [&](AST::StructDefPtr ptr) { tryAddSymbol(ptr); },
+                [&](AST::VariablePtr ptr) { ptr->def = current_variable_->getSymbol(ptr->name); },
+                [&](AST::SimpleTypePtr ptr) { ptr->def = findType(ptr->name); },
+                [&](AST::FuncDefPtr ptr) {
+                    tryAddSymbol(ptr);
+                    next_scope_name_ = ptr->name;
+                },
+                [&](AST::BlockPtr ptr) {
+                    pushScope(next_scope_name_);
+                    next_scope_name_ = kDefaultScopeName;
+                },
+        };
         visit(matcher, node);
         return AST::VisitorState::Normal;
     }
 
-    AST::VisitorState DeclMatcher::beforeChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        size_t type_hash = proxy_typeid(child).hash_code();
-        if (type_hash == typeid(AST::BlockPtr).hash_code()) {
-            auto name = kDefaultScopeName;
-            if (proxy_typeid(*node).hash_code() == typeid(AST::FuncDefNode).hash_code()) {
-                name = proxy_cast<AST::FuncDefPtr>(node)->name;
-            }
-            pushScope(name);
-        }
-        return AST::VisitorState::Normal;
-    }
-
-    AST::VisitorState DeclMatcher::afterChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child) {
-        size_t type_hash = proxy_typeid(node).hash_code();
-        if (type_hash == typeid(AST::BlockPtr).hash_code()) {
+    AST::VisitorState DeclMatcher::afterSubtreeImpl(AST::ASTNodePtr node) {
+        if (pointerType<AST::BlockPtr>(node)) {
             popScope();
         }
         return AST::VisitorState::Normal;
     }
-
+    
     AST::SimpleTypeNode::TypeDefPtr DeclMatcher::findType(const std::string &name) {
         if (auto alias = current_alias_->getSymbol(name))
             return alias;
