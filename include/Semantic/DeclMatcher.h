@@ -22,6 +22,9 @@ namespace TinyCobalt::Semantic {
 
         ~DeclMatcher() {}
 
+        DeclMatcher(const DeclMatcher &) = delete;
+        DeclMatcher(DeclMatcher &&) = default;
+
         AST::VisitorState beforeSubtreeImpl(AST::ASTNodePtr node);
         AST::VisitorState beforeChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
         AST::VisitorState afterChildImpl(AST::ASTNodePtr node, AST::ASTNodePtr child);
@@ -40,10 +43,10 @@ namespace TinyCobalt::Semantic {
 
         TypeDefPtr findType(const std::string &name);
 
-        std::shared_ptr<FuncScope> current_func_ = nullptr;
-        std::shared_ptr<VariableScope> current_variable_ = nullptr;
-        std::shared_ptr<AliasScope> current_alias_ = nullptr;
-        std::shared_ptr<StructScope> current_struct_ = nullptr;
+        std::unique_ptr<FuncScope> current_func_ = nullptr;
+        std::unique_ptr<VariableScope> current_variable_ = nullptr;
+        std::unique_ptr<AliasScope> current_alias_ = nullptr;
+        std::unique_ptr<StructScope> current_struct_ = nullptr;
 
         void tryAddSymbol(AST::FuncDefPtr ptr);
         void tryAddSymbol(AST::VariableDefPtr ptr);

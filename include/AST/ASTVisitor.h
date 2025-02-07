@@ -50,7 +50,7 @@ namespace TinyCobalt::AST {
     class BaseASTVisitorMiddleware {
     public:
         // INTERFACES
-        VisitorState beforeSubtree(this Middleware self, ASTNodePtr node) {
+        VisitorState beforeSubtree(this Middleware &self, ASTNodePtr node) {
             if constexpr (requires(Middleware M) {
                               { M.beforeSubtreeImpl(node) } -> std::same_as<VisitorState>;
                           }) {
@@ -60,7 +60,7 @@ namespace TinyCobalt::AST {
             }
         }
 
-        VisitorState afterSubtree(this Middleware self, ASTNodePtr node) {
+        VisitorState afterSubtree(this Middleware &self, ASTNodePtr node) {
             if constexpr (requires(Middleware M) {
                               { M.afterSubtreeImpl(node) } -> std::same_as<VisitorState>;
                           }) {
@@ -70,7 +70,7 @@ namespace TinyCobalt::AST {
             }
         }
 
-        VisitorState beforeChild(this Middleware self, ASTNodePtr node, ASTNodePtr child) {
+        VisitorState beforeChild(this Middleware &self, ASTNodePtr node, ASTNodePtr child) {
             if constexpr (requires(Middleware M) {
                               { M.beforeChildImpl(node, child) } -> std::same_as<VisitorState>;
                           }) {
@@ -80,7 +80,7 @@ namespace TinyCobalt::AST {
             }
         }
 
-        VisitorState afterChild(this Middleware self, ASTNodePtr node, ASTNodePtr child) {
+        VisitorState afterChild(this Middleware &self, ASTNodePtr node, ASTNodePtr child) {
             if constexpr (requires(Middleware M) {
                               { M.afterChildImpl(node, child) } -> std::same_as<VisitorState>;
                           }) {

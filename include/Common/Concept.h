@@ -10,6 +10,7 @@
 #include <memory>
 #include <type_traits>
 #include <variant>
+#include "Common/Assert.h"
 
 namespace TinyCobalt {
 
@@ -63,12 +64,20 @@ namespace TinyCobalt {
     template<typename Ptr>
     concept SmartPointerLike = requires(Ptr ptr) {
         typename std::pointer_traits<Ptr>::pointer;
+        typename std::pointer_traits<Ptr>::element_type;
         { ptr.operator->() } -> std::same_as<typename std::pointer_traits<Ptr>::element_type *>;
         { ptr.operator*() } -> std::same_as<typename std::pointer_traits<Ptr>::element_type &>;
     };
 
+    TINY_COBALT_CONCEPT_ASSERT(SmartPointerLike, std::shared_ptr<int>);
+    TINY_COBALT_CONCEPT_ASSERT(SmartPointerLike, std::unique_ptr<int>);
+
     template<typename Ptr>
     concept RawPointerLike = std::is_pointer_v<Ptr> || std::is_null_pointer_v<Ptr>;
+
+    TINY_COBALT_CONCEPT_ASSERT(RawPointerLike, int *);
+    TINY_COBALT_CONCEPT_ASSERT(RawPointerLike, const int *);
+    TINY_COBALT_CONCEPT_ASSERT(RawPointerLike, std::nullptr_t);
 
     template<typename Ptr>
     concept PointerLike = SmartPointerLike<Ptr> || RawPointerLike<Ptr>;

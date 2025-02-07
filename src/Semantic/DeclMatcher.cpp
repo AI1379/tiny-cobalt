@@ -94,16 +94,16 @@ namespace TinyCobalt::Semantic {
     // FIXME: MEMORY LEAK!
     // It may be necessary to refactor the Scope with the type of parent set to std::unique_ptr<Scope>.
     void DeclMatcher::pushScope(const std::string &name) {
-        current_alias_ = std::make_shared<AliasScope>(current_alias_.get(), name);
-        current_func_ = std::make_shared<FuncScope>(current_func_.get(), name);
-        current_variable_ = std::make_shared<VariableScope>(current_variable_.get(), name);
-        current_struct_ = std::make_shared<StructScope>(current_struct_.get(), name);
+        current_alias_ = std::make_unique<AliasScope>(std::move(current_alias_), name);
+        current_func_ = std::make_unique<FuncScope>(std::move(current_func_), name);
+        current_variable_ = std::make_unique<VariableScope>(std::move(current_variable_), name);
+        current_struct_ = std::make_unique<StructScope>(std::move(current_struct_), name);
     }
 
     void DeclMatcher::popScope() {
-        current_alias_ = current_alias_->getParent()->shared_from_this();
-        current_func_ = current_func_->getParent()->shared_from_this();
-        current_variable_ = current_variable_->getParent()->shared_from_this();
-        current_struct_ = current_struct_->getParent()->shared_from_this();
+        current_alias_ = current_alias_->getParent();
+        current_func_ = current_func_->getParent();
+        current_variable_ = current_variable_->getParent();
+        current_struct_ = current_struct_->getParent();
     }
 } // namespace TinyCobalt::Semantic
