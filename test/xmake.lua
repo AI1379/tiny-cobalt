@@ -1,4 +1,5 @@
 add_requires("gtest")
+add_requires("cpptrace")
 
 target("tiny-cobalt-test")
     set_kind("binary")
@@ -6,3 +7,4 @@ target("tiny-cobalt-test")
     add_cxxflags("clang::-fsized-deallocation")
     add_files("**.cpp")
     add_packages("gtest")
+    add_packages("cpptrace")
