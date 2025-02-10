@@ -18,8 +18,6 @@ namespace TinyCobalt::Semantic {
 
     inline constexpr std::string kDefaultScopeName = "<anonymous>";
 
-    // TODO: Merge these two to one
-
     /**
      * A class to represent a scope in the program.
      */

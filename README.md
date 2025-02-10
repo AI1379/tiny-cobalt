@@ -19,3 +19,5 @@ Open the project using VSCode with following extensions:
 - clangd
 
 Then set `"xmake.compileCommandsDirectory"` to `build` so that `clangd` can find the `compile_commands.json`.
+
+[Development Log](https://www.listener1379.top/2025/02/tiny-cobalt-dev/)

@@ -54,7 +54,8 @@ CMakeFiles/
 *.xcuserdata/
 
 # VSCode files
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 
 # Other
 *.log

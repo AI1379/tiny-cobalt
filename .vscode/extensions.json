@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "tboox.xmake-vscode",
+        "llvm-vs-code-extensions.vscode-clangd",
+    ]
+}
