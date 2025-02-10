@@ -100,7 +100,11 @@ namespace TinyCobalt::Semantic {
                 ptr->exprType() = AST::BuiltInType::findType("bool");
                 break;
             }
-            case AST::BinaryOp::Assign:
+            case AST::BinaryOp::Assign: {
+                ptr->exprType() = ptr->rhs->exprType();
+                break;
+            }
+            // TODO: Split compound assignment to assignment and operator for operator overloading
             case AST::BinaryOp::AddAssign:
             case AST::BinaryOp::SubAssign:
             case AST::BinaryOp::MulAssign:
@@ -111,8 +115,9 @@ namespace TinyCobalt::Semantic {
             case AST::BinaryOp::BitXorAssign:
             case AST::BinaryOp::BitLShiftAssign:
             case AST::BinaryOp::BitRShiftAssign: {
-                ptr->exprType() = ptr->rhs->exprType();
-                break;
+                TINY_COBALT_ASSERT(ptr->exprType()->convertibleTo(AST::BuiltInType::findType("int")),
+                                   "No valid operator for the operand.");
+                ptr->exprType() = AST::BuiltInType::findType("int");
             }
             // TODO: remove this case
             case AST::BinaryOp::Member:
