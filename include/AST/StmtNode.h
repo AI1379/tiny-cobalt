@@ -40,7 +40,6 @@ namespace TinyCobalt::AST {
     struct StmtNodeProxy // NOLINT
         : pro::facade_builder // NOLINT
           ::add_facade<ASTNodeProxy, true> // NOLINT
-          ::add_convention<MemStmtFlag, void()> // NOLINT
           ::build {};
 
     template<typename T>
